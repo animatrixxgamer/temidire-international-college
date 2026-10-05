@@ -1,19 +1,6 @@
 import type { Metadata } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import RootClient from "@/components/RootClient";
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  display: "swap",
-});
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-jakarta",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -33,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${jakarta.variable}`}>
+    <html lang="en">
       <body className="bg-navy-950 font-sans text-ivory-100">
         <RootClient>{children}</RootClient>
       </body>
