@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  /* ——— Temidire design tokens ——— */
+  --color-navy-950: #06122a;
+  --color-navy-900: #0b1f3f;
+  --color-navy-800: #0f2b57;
+  --color-navy-700: #16407a;
+  --color-gold-500: #c9a24b;
+  --color-gold-300: #e2bf6a;
+  --color-ivory-100: #f5efe0;
+  --color-emerald-600: #0e7c5b;
+  --color-ember-500: #c2410c;
+  --color-amber-400: #e0a800;
+
+  --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+
+  /* ——— motion tokens ——— */
+  --animate-rise: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-drift: drift 18s ease-in-out infinite;
+  --animate-caret: caret 1s steps(1) infinite;
+  --animate-breathe: breathe 6s ease-in-out infinite;
+  --animate-wiggle: wiggle 0.6s ease-in-out 3;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); opacity: 0.2; }
+  50% { transform: translateY(-40px); opacity: 0.9; }
+}
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(5%, -4%); }
+}
+@keyframes caret {
+  50% { opacity: 0; }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.92; }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(12deg); }
+  75% { transform: rotate(-12deg); }
+}
+
+html {
+  scroll-behavior: auto; /* Lenis handles smoothness on desktop */
+}
+
+body {
+  background: var(--color-navy-950);
+  color: var(--color-ivory-100);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom cursor takes over on fine pointers */
+.cursor-none-all,
+.cursor-none-all * {
+  cursor: none !important;
+}
+
+::selection {
+  background: var(--color-gold-500);
+  color: var(--color-navy-950);
+}
+
+/* Focus visibility everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-gold-500);
+  outline-offset: 3px;
+}
+
+/* Tabular numerals for stats and tables */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
