@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/guards";
 import { setApplicationStatus, addApplicationNote } from "@/app/admin/actions";
@@ -7,9 +8,9 @@ export const dynamic = "force-dynamic";
 const STATUSES = ["NEW", "CONTACTED", "VISITING", "ASSESSMENT", "OFFERED", "ENROLLED", "REJECTED"] as const;
 
 const chip = (s: string) =>
-  s === "NEW" ? "bg-gold-500/15 text-gold-500"
-  : s === "REJECTED" ? "bg-ember-500/15 text-ember-500"
-  : s === "ENROLLED" ? "bg-emerald-600/15 text-emerald-600"
+  s === "NEW" ? "bg-gold-500/10 text-gold-300"
+  : s === "REJECTED" ? "bg-ember-500/15 text-ember-400"
+  : s === "ENROLLED" ? "bg-emerald-600/15 text-emerald-400"
   : "bg-ivory-100/10 text-ivory-100/70";
 
 export default async function ApplicationsPage({
@@ -33,13 +34,28 @@ export default async function ApplicationsPage({
       </header>
 
       <div className="flex flex-wrap gap-2">
-        <a href="/admin/applications" className={`rounded-full px-4 py-1.5 text-sm ${!filter ? "bg-gold-500 text-navy-950 font-semibold" : "bg-navy-800 text-ivory-100/70"}`}>
+        <Link
+          href="/admin/applications"
+          className={`rounded-full px-4 py-1.5 text-sm font-semibold transition hover:brightness-110 ${
+            !filter
+              ? "bg-gold-500 text-navy-950"
+              : "bg-navy-800/70 text-ivory-100/80 hover:bg-navy-700/70 hover:text-ivory-100"
+          }`}
+        >
           All ({apps.length})
-        </a>
+        </Link>
         {STATUSES.map((s) => (
-          <a key={s} href={`/admin/applications?status=${s}`} className={`rounded-full px-4 py-1.5 text-sm ${filter === s ? "bg-gold-500 text-navy-950 font-semibold" : "bg-navy-800 text-ivory-100/70"}`}>
+          <Link
+            key={s}
+            href={`/admin/applications?status=${s}`}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition hover:brightness-110 ${
+              filter === s
+                ? "bg-gold-500 text-navy-950"
+                : "bg-navy-800/70 text-ivory-100/80 hover:bg-navy-700/70 hover:text-ivory-100"
+            }`}
+          >
             {s}
-          </a>
+          </Link>
         ))}
       </div>
 

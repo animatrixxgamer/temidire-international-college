@@ -53,7 +53,7 @@ export default async function AdminOverview() {
                   <p className="truncate font-medium">{a.childName}</p>
                   <p className="text-xs text-ivory-100/50">{a.level} · {a.reference}</p>
                 </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${a.status === "NEW" ? "bg-gold-500/15 text-gold-500" : "bg-ivory-100/10 text-ivory-100/60"}`}>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${a.status === "NEW" ? "bg-gold-500/10 text-gold-300" : "bg-ivory-100/10 text-ivory-100/60"}`}>
                   {a.status}
                 </span>
               </li>
