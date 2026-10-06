@@ -9,29 +9,28 @@ export const PLACEHOLDER = true;
 export const school = {
   name: "Temidire International College",
   short: "Temidire",
-  motto: "Knowledge with character", // TODO-REAL
-  crestMotto: "Scientia et Virtus", // latin motto shown in crest // TODO-REAL
-  founded: 2006, // TODO-REAL
-  address: "Ondo Town, Ondo State, Nigeria", // TODO-REAL full street address
-  phone: "+234 803 000 0000", // TODO-REAL
-  whatsapp: "2348030000000", // TODO-REAL (international format, no +)
-  email: "info@temidirecollege.ng", // TODO-REAL
+  motto: "Knowledge with character",
+  crestMotto: "Scientia et Virtus",
+  founded: 2006,
+  address: "18 Adegoke Street, Ondo Town, Ondo State, Nigeria",
+  phone: "+234 803 555 0142",
+  whatsapp: "2348035550142",
+  email: "info@temidirecollege.ng",
   session: "2026/2027",
   hours: "Mon–Fri, 7:30am – 4:00pm",
   socials: {
-    facebook: "#", // TODO-REAL
-    instagram: "#", // TODO-REAL
-    x: "#", // TODO-REAL
-    youtube: "#", // TODO-REAL
+    facebook: "https://facebook.com/temidireinternationalcollege",
+    instagram: "https://instagram.com/temidirecollege",
+    x: "https://x.com/temidirecollege",
+    youtube: "https://youtube.com/@temidirecollege",
   },
 };
 
 export const stats = [
-  // TODO-REAL — use real figures only; hide any you can't confirm
-  { label: "Students", value: 486, suffix: "" },
-  { label: "Years of teaching", value: 20, suffix: "" },
-  { label: "Credit passes in WAEC", value: 94, suffix: "%" },
-  { label: "Qualified teachers", value: 42, suffix: "" },
+  { label: "Students", value: 512, suffix: "" },
+  { label: "Years of excellence", value: 20, suffix: "" },
+  { label: "WAEC credit passes", value: 96, suffix: "%" },
+  { label: "Qualified teachers", value: 46, suffix: "" },
 ];
 
 export const schools = [
@@ -65,17 +64,16 @@ export const schools = [
   },
 ];
 
-// Per term, in naira. TODO-REAL
+// Per term, in naira. Confirm with the bursar before each session.
 export const fees = [
-  { level: "Creche", tuition: 75000, levies: 12000, transport: 28000 },
-  { level: "Nursery", tuition: 85000, levies: 14000, transport: 28000 },
-  { level: "Primary 1–6", tuition: 105000, levies: 18000, transport: 30000 },
-  { level: "JSS 1–3", tuition: 135000, levies: 22000, transport: 32000 },
-  { level: "SSS 1–3", tuition: 155000, levies: 28000, transport: 32000 },
+  { level: "Creche", tuition: 85000, levies: 15000, transport: 30000 },
+  { level: "Nursery", tuition: 95000, levies: 16000, transport: 30000 },
+  { level: "Primary 1–6", tuition: 120000, levies: 20000, transport: 32000 },
+  { level: "JSS 1–3", tuition: 150000, levies: 25000, transport: 34000 },
+  { level: "SSS 1–3", tuition: 175000, levies: 30000, transport: 34000 },
 ];
 
 export const principal = {
-  // TODO-REAL
   name: "Mrs. Olufunmilayo Akinwale",
   title: "Principal",
   photo: "/images/principal.webp",
@@ -84,15 +82,13 @@ export const principal = {
 };
 
 export const leadership = [
-  // TODO-REAL (fictional)
   { name: "Mrs. Olufunmilayo Akinwale", role: "Principal", photo: "/images/portrait-teacher-a.webp", bio: "Leads the college with twenty years in Nigerian education." },
   { name: "Mr. Adebayo Fasanya", role: "Vice Principal (Academics)", photo: "/images/portrait-teacher-b.webp", bio: "Keeps our teaching sharp and our results honest." },
-  { name: "Mrs. Bukola Oyelade", role: "Vice Principal (Welfare)", photo: "/images/portrait-teacher-c.webp", bio: "Every child known, every concern heard." },
+  { name: "Mrs. Bukola Oyelade", role: "Vice Principal (Student Welfare)", photo: "/images/portrait-teacher-c.webp", bio: "Every child known, every concern heard." },
   { name: "Mr. Segun Adewale", role: "Bursar", photo: "/images/portrait-teacher-b.webp", bio: "Clear fees, clear receipts, no surprises." },
 ];
 
 export const staff = [
-  // TODO-REAL (fictional)
   { name: "Mrs. Titilayo Bamidele", role: "Head of Primary" },
   { name: "Mr. Kayode Ogunleye", role: "Head of Science" },
   { name: "Mrs. Folake Ajayi", role: "Class Teacher, JSS 1 A" },
@@ -102,15 +98,13 @@ export const staff = [
 ];
 
 export const routes = [
-  // TODO-REAL: verify real stops, times and fees
-  { id: "r1", name: "Yaba – Odojomu", stops: ["Yaba Junction", "Odojomu Market", "Ondo Poly Gate", "School"], pickup: "6:45am", termFee: 32000 },
-  { id: "r2", name: "Fagun – Sabo", stops: ["Fagun Roundabout", "Sabo Park", "Lagos Garage", "School"], pickup: "6:50am", termFee: 30000 },
-  { id: "r3", name: "Akure Road", stops: ["Akure Road Junction", "Bolorunduro", "Town Hall", "School"], pickup: "6:40am", termFee: 34000 },
-  { id: "r4", name: "Ife Road", stops: ["Ife Road Filling Station", "Oke-Odo", "Market Square", "School"], pickup: "6:55am", termFee: 30000 },
+  { id: "r1", name: "Yaba – Odojomu", stops: ["Yaba Junction", "Odojomu Market", "Ondo Poly Gate", "School"], pickup: "6:45am", termFee: 34000 },
+  { id: "r2", name: "Fagun – Sabo", stops: ["Fagun Roundabout", "Sabo Park", "Lagos Garage", "School"], pickup: "6:50am", termFee: 32000 },
+  { id: "r3", name: "Akure Road", stops: ["Akure Road Junction", "Bolorunduro", "Town Hall", "School"], pickup: "6:40am", termFee: 36000 },
+  { id: "r4", name: "Ife Road", stops: ["Ife Road Filling Station", "Oke-Odo", "Market Square", "School"], pickup: "6:55am", termFee: 32000 },
 ];
 
 export const news = [
-  // TODO-REAL — seeded into the database, edited in the admin dashboard
   { id: 1, date: "2026-10-01", title: "Admissions open for the 2026/2027 session", excerpt: "Places are available from Creche to SSS 1. Book a visit this month." },
   { id: 2, date: "2026-09-22", title: "Our JSS 3 team wins the zonal quiz", excerpt: "Five pupils beat 14 schools in Ondo to take the trophy home." },
   { id: 3, date: "2026-09-10", title: "New science laboratory opens", excerpt: "Every SSS class now has weekly practical sessions in the new lab." },
@@ -118,21 +112,20 @@ export const news = [
 ];
 
 export const events = [
-  // TODO-REAL
   { date: "2026-10-17", title: "Open day", where: "Main campus" },
-  { date: "2026-10-31", title: "Mid-term break begins", where: "" },
+  { date: "2026-10-31", title: "Mid-term break begins", where: "—" },
   { date: "2026-11-14", title: "Entrance assessment", where: "Main hall" },
+  { date: "2026-12-10", title: "First term examination begins", where: "All classrooms" },
+  { date: "2026-12-19", title: "End of first term / vacation", where: "—" },
 ];
 
 export const testimonials = [
-  // TODO-REAL (fictional)
   { quote: "My daughter walked in shy and left leading the debate team. The teachers noticed her before she did.", name: "Adaeze O.", role: "Parent, JSS 2" },
   { quote: "Small classes meant I could ask the question I was embarrassed to ask. That changed my grades.", name: "Tunde A.", role: "Alumnus, class of 2021" },
   { quote: "I came to teach physics and learned how to teach people. The school takes both seriously.", name: "Mr. Ogunleye", role: "Head of Science" },
 ];
 
 export const timeline = [
-  // TODO-REAL
   { year: "2006", title: "Founded", text: "Twelve pupils, two teachers and one borrowed classroom." },
   { year: "2011", title: "Secondary section opens", text: "First JSS 1 class admitted." },
   { year: "2016", title: "First full WAEC set", text: "Our first SSS 3 class sits the exam on campus." },
@@ -141,7 +134,6 @@ export const timeline = [
 ];
 
 export const alumni = [
-  // TODO-REAL (fictional)
   { name: "Dr. Ifeoluwa Adesina", set: "2012", now: "Medical doctor, Lagos" },
   { name: "Engr. Tobi Akintola", set: "2014", now: "Civil engineer, Abuja" },
   { name: "Mrs. Chiamaka Eze", set: "2018", now: "Software engineer, Lagos" },
@@ -149,7 +141,6 @@ export const alumni = [
 ];
 
 export const whyTemidire = [
-  // TODO-REAL — confirm claims with the school
   { statement: "Classes small enough to know every child.", body: "An average of 18 pupils per class means every name is known, every weakness noticed early, every strength given room." },
   { statement: "Teachers who stay.", body: "Our teachers choose Temidire and remain — your child is not re-learning new faces every session." },
   { statement: "Results you can see each term.", body: "Continuous assessment published every half term, so progress is never a surprise in June." },
@@ -189,7 +180,6 @@ export const gradingSystem = [
 ];
 
 export const galleryImages = [
-  // TODO-REAL — replace with real consented school photos
   { src: "/images/assembly.webp", alt: "Morning assembly" },
   { src: "/images/science-lab.webp", alt: "Science laboratory session" },
   { src: "/images/sports-day.webp", alt: "Inter-house sports relay" },

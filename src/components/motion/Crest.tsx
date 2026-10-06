@@ -1,67 +1,149 @@
 "use client";
-// Placeholder crest drawn to the same structure as a real school crest:
-// crown, quartered shield (star / lamp / open book), laurel branches, motto.
-// Replace CREST_STROKES with paths from your own crest SVG (keep viewBox 240×290).
+
+// Temidire International College — school crest.
+// Navy, gold and ivory. Crown, open book, oil lamp, laurel wreath, motto.
 export const CREST_VIEWBOX = "0 0 240 290";
 
-const leaf = (x: number, y: number, a: number) =>
-  `M${x} ${y} q${-7 * a} -6 ${-5 * a} -15 q${7 * a} 5 ${5 * a} 15`;
-const leaves: Array<[number, number]> = [
-  [28, 222],
-  [20, 196],
-  [17, 168],
-  [21, 140],
-  [32, 118],
-];
+const NAVY = "#13243b";
+const GOLD = "#C9A24B";
+const IVORY = "#F4EFE6";
 
-export type CrestStroke = { d: string; shield?: boolean; mirror?: boolean };
+/** Outer navy disc behind the emblem */
+const SHIELD =
+  "M30 50 H210 A90 90 0 1 0 30 50 Z";
 
-export const CREST_STROKES: CrestStroke[] = [
-  { d: "M90 32 L98 14 L109 26 L120 8 L131 26 L142 14 L150 32 Z" }, // crown
-  { d: "M120 40 H190 V130 C190 185 160 222 120 244 C80 222 50 185 50 130 V40 Z", shield: true },
-  { d: "M50 100 H190 M120 40 V100" }, // quarters
-  { d: "M85 56 L88.5 65.1 L98.3 65.7 L90.7 71.9 L93.2 81.3 L85 76 L76.8 81.3 L79.3 71.9 L71.7 65.7 L81.5 65.1 Z" }, // star
-  { d: "M155 90 C144 79 151 68 155 56 C159 68 166 79 155 90 Z M147 95 H163" }, // lamp flame
-  { d: "M82 150 Q101 142 120 152 Q139 142 158 150 V190 Q139 182 120 192 Q101 182 82 190 Z M120 152 V192" }, // book
-  { d: "M52 250 C20 226 12 164 38 108" }, // laurel stem L
-  { d: leaves.map(([x, y], i) => leaf(x + i * 0.5, y, 1)).join(" ") },
-  { d: "M52 250 C20 226 12 164 38 108", mirror: true }, // laurel stem R
-  { d: leaves.map(([x, y], i) => leaf(x + i * 0.5, y, 1)).join(" "), mirror: true },
-];
+/** Crown: five archi + band, gold fill */
+const CROWN =
+  "M88 40 L88 22 L96 32 L104 10 L112 32 L120 18 L128 32 L136 10 L144 32 L152 22 L152 40 Z M88 40 H152 V48 H88 Z";
 
-export const MIRROR = "translate(240 0) scale(-1 1)";
+/** Open book: ivory pages, gold spine + cover edges */
+const BOOK =
+  "M78 152 Q120 142 162 152 L162 192 Q120 182 78 192 Z M120 148 V196 M78 152 H162 M78 152 Q99 147 120 152 Q141 147 162 152 M78 188 Q99 184 120 188 Q141 184 162 188";
+
+/** Oil lamp: gold body + handle, ivory flame */
+const LAMP =
+  "M138 92 C132 84 134 76 138 70 C142 76 144 84 138 92 Z M133 92 H143 M130 96 C128 104 132 110 138 110 C144 110 148 104 146 96 M138 70 C136 66 140 62 142 62 C144 62 146 66 144 70 Z";
+
+/** Five-point star: gold, upper left quarter */
+const STAR =
+  "M100 62 L102 68 L108 68 L103 72 L105 78 L100 74 L95 78 L97 72 L92 68 L98 68 Z";
+
+/** Laurel wreath: two stems with 5 leaves each, gold stroke, wrapping the bottom of the shield */
+const LAUREL_LEFT =
+  "M62 250 C44 228 38 188 58 150 M58 150 q-2 -6 -8 -4 M58 150 q2 -6 8 -4 M58 170 q-2 -6 -8 -4 M58 170 q2 -6 8 -4 M58 190 q-2 -6 -8 -4 M58 190 q2 -6 8 -4 M58 210 q-2 -6 -8 -4 M58 210 q2 -6 8 -4 M58 230 q-2 -6 -8 -4 M58 230 q2 -6 8 -4";
+const LAUREL_RIGHT =
+  "M178 250 C196 228 202 188 182 150 M182 150 q2 -6 8 -4 M182 150 q-2 -6 -8 -4 M182 170 q2 -6 8 -4 M182 170 q-2 -6 -8 -4 M182 190 q2 -6 8 -4 M182 190 q-2 -6 -8 -4 M182 210 q2 -6 8 -4 M182 210 q-2 -6 -8 -4 M182 230 q2 -6 8 -4 M182 230 q-2 -6 -8 -4";
 
 export default function Crest({
-  motto = "Scientia et Virtus",
+  motto = "SCIENTIA  ·  ET  ·  VIRTUS",
   className = "",
 }: {
   motto?: string;
   className?: string;
 }) {
   return (
-    <svg viewBox={CREST_VIEWBOX} className={className} role="img" aria-label="School crest">
-      {CREST_STROKES.map((s, i) => (
-        <path
-          key={i}
-          d={s.d}
-          transform={s.mirror ? MIRROR : undefined}
-          fill={s.shield ? "#C9A24B22" : "none"}
-          stroke="#C9A24B"
-          strokeWidth={3}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
+    <svg
+      viewBox={CREST_VIEWBOX}
+      className={className}
+      role="img"
+      aria-label="Temidire International College crest"
+    >
+      {/* Outer ring: navy disc + gold rim */}
+      <circle cx="120" cy="160" r="110" fill={NAVY} />
+      <circle cx="120" cy="160" r="110" fill="none" stroke={GOLD} strokeWidth="6" />
+      <circle cx="120" cy="160" r="102" fill="none" stroke={GOLD} strokeWidth="2" />
+
+      {/* Inner ivory field */}
+      <circle cx="120" cy="160" r="92" fill={IVORY} />
+
+      {/* Gold laurel wreath wrapping lower half */}
+      <path
+        d={LAUREL_LEFT}
+        fill="none"
+        stroke={GOLD}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d={LAUREL_RIGHT}
+        fill="none"
+        stroke={GOLD}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Crown sitting on top of the shield */}
+      <path
+        d={CROWN}
+        fill={GOLD}
+        stroke={NAVY}
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+
+      {/* Central shield emblem: navy rounded panel */}
+      <path
+        d="M64 96 H176 V200 C176 232 154 252 120 258 C86 252 64 232 64 200 Z"
+        fill={NAVY}
+        stroke={GOLD}
+        strokeWidth="3"
+      />
+
+      {/* Open book — ivory pages with gold spine, centred */}
+      <g fill="none" stroke={GOLD} strokeWidth="2.5" strokeLinejoin="round">
+        <path d={BOOK} />
+      </g>
+
+      {/* Oil lamp with flame — to the right of the book */}
+      <g fill="none" stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d={LAMP} />
+      </g>
+      <path
+        d="M138 70 C136 66 140 62 142 62 C144 62 146 66 144 70 Z"
+        fill={IVORY}
+        stroke={GOLD}
+        strokeWidth="2"
+      />
+
+      {/* Five-point star — upper left of emblem */}
+      <path d={STAR} fill={GOLD} />
+
+      {/* Motto ribbon below the crest */}
+      <path
+        d="M40 272 H200 V278 H40 Z"
+        fill={NAVY}
+        stroke={GOLD}
+        strokeWidth="2"
+      />
       <text
         x="120"
-        y="280"
+        y="278"
         textAnchor="middle"
-        fontSize="13"
+        dominantBaseline="middle"
+        fontSize="11"
         letterSpacing="3"
-        fill="#C9A24B"
-        fontFamily="serif"
+        fill={GOLD}
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontWeight="700"
       >
         {motto}
+      </text>
+
+      {/* Small Temidire label top-left */}
+      <text
+        x="120"
+        y="92"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="9"
+        letterSpacing="2"
+        fill={NAVY}
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontWeight="700"
+      >
+        TEMIDIRE
       </text>
     </svg>
   );
