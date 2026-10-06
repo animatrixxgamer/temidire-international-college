@@ -86,4 +86,7 @@ docs/
 4. Deploy: `docs/DEPLOYMENT.md`.
 
 ---
+---
+**Live repo:** https://github.com/animatrixxgamer/temidire-international-college
+
 Built with Buffy 🤖 · All placeholder people/figures are fictional and must be replaced before public launch.
