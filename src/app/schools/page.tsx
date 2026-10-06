@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Reveal, ImageReveal, SplitHeading } from "@/components/motion/primitives";
 import { schools, fees, naira } from "@/content/siteContent";
 
@@ -57,12 +58,12 @@ export default function SchoolsPage() {
           <p className="mx-auto mt-3 max-w-xl opacity-70">
             Send us the child's age and last school report — we'll advise the right entry point honestly.
           </p>
-          <a
+          <Link
             href="/admissions/apply"
             className="mt-8 inline-block rounded-full bg-gold-500 px-7 py-3 font-semibold text-navy-950 transition hover:brightness-110"
           >
             Start an application
-          </a>
+          </Link>
         </Reveal>
       </section>
     </main>

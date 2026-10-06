@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import AdmissionsSteps from "@/components/motion/AdmissionsSteps";
 import { Reveal, SplitHeading } from "@/components/motion/primitives";
 import RequirementsTabs from "@/components/RequirementsTabs";
@@ -84,12 +85,12 @@ export default function AdmissionsPage() {
           <p className="mx-auto mt-3 max-w-xl opacity-70">
             The online form takes about five minutes. You can stop and continue later — your answers save themselves.
           </p>
-          <a
+          <Link
             href="/admissions/apply"
             className="mt-8 inline-block rounded-full bg-gold-500 px-8 py-4 font-semibold text-navy-950 transition hover:brightness-110"
           >
             Start an application
-          </a>
+          </Link>
         </Reveal>
       </section>
     </main>

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { EASE_OUT } from "@/components/motion/tokens";
@@ -186,12 +187,12 @@ export default function ApplyPage() {
               </button>
             </div>
             <div className="mt-8 flex flex-col gap-3">
-              <a
+              <Link
                 href="/"
                 className="rounded-full bg-gold-500 px-6 py-3 font-semibold text-navy-950"
               >
                 Back to home
-              </a>
+              </Link>
             </div>
             {PLACEHOLDER && (
               <p className="mt-6 text-xs text-ivory-100/40">

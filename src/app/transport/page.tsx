@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { Reveal, SplitHeading } from "@/components/motion/primitives";
 import { RouteMap, CountUp } from "@/components/motion/Extras";
@@ -89,12 +90,12 @@ export default function TransportPage() {
             <p className="mx-auto mt-3 max-w-xl opacity-70">
               Call the office on {school.phone} or message us on WhatsApp — we'll confirm the nearest stop to your home.
             </p>
-            <a
-              href={`/contact`}
+            <Link
+              href="/contact"
               className="mt-8 inline-block rounded-full bg-navy-950 px-7 py-3 font-semibold text-ivory-100"
             >
               Contact the school
-            </a>
+            </Link>
           </Reveal>
         </div>
       </section>
