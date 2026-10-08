@@ -9,6 +9,16 @@ Generate 4 per prompt, pick the best. Export as **WebP**, then drop into `temidi
 **Always add this negative prompt:**
 > text, letters, watermark, logo, signature, distorted hands, extra fingers, deformed faces, plastic skin, oversaturated, cartoon, nsfw
 
+---
+
+## Status — all filenames below are in place ✅ (updated 7 Oct 2026)
+
+- **Real photographs in `public/images/`**: `assembly`, `science-lab`, `sports-day`, `library`, `computer-lab`, `graduation`, `playground`, `school-bus`, `classroom`, `school-nursery`, `school-primary`, `school-secondary` (all 1024×1024 WebP).
+- **Generated placeholders to swap for real photos before launch**: `school-creche`, `principal`, `portrait-teacher-a/b/c` (crest artwork drawn with PIL, same navy/gold treatment).
+- Every `<img>` now has an `onError` fallback to `public/images/placeholder.svg` (`src/lib/img.ts`), so a missing file degrades to the crest placeholder instead of a broken-image icon.
+- Item 1 `hero-campus.webp` is **not referenced anywhere in code** — the hero is pure vector + type. Skip it unless the hero gains a photo.
+- Item 18 is saved as **`classroom.webp`**, the name `siteContent.ts` references (not `classroom-wide.webp`).
+
 **Uniform rule for every image:** navy blazers/tunics with gold trim and white shirts — so all imagery matches the brand.
 
 ---
@@ -39,12 +49,12 @@ Generate 4 per prompt, pick the best. Export as **WebP**, then drop into `temidi
 | 15 | `computer-lab.webp` | 3:2 | School computer room, students at desktop computers, screens softly glowing, orderly rows |
 | 16 | `playground.webp` | 4:3 | Children playing on a school playground, laughing, bright afternoon |
 | 17 | `school-bus.webp` | 3:2 | A yellow school bus parked at the school gate, children in navy uniforms boarding, driver smiling, early morning light |
-| 18 | `classroom-wide.webp` | 16:9 | Wide shot of a bright secondary classroom, students at desks, teacher mid-explanation, large windows |
+| 18 | `classroom.webp` | 16:9 | Wide shot of a bright secondary classroom, students at desks, teacher mid-explanation, large windows |
 
 ## Where each is referenced in code
 
 - `src/content/siteContent.ts` → `schools[].image`, `principal.photo`, `leadership[].photo`, `galleryImages[]`
-- Missing files simply show as broken images — the site still works; replace filenames in `siteContent.ts` if you change any.
+- Missing files fall back to `public/images/placeholder.svg` through `onError` (`src/lib/img.ts`) — they never render as a broken image; replace filenames in `siteContent.ts` if you change any.
 
 ## Two things NOT to AI-generate
 

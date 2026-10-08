@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/guards";
 import { markMessageHandled } from "@/app/admin/actions";
+import { EmptyInbox } from "@/components/motion/EmptyStates";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,13 @@ export default async function AdminInboxPage() {
                 </p>
               </div>
             ))}
-            {(list as typeof open).length === 0 && <p className="text-sm text-ivory-100/40">Nothing here.</p>}
+            {(list as typeof open).length === 0 && (
+              <EmptyInbox
+                tone="dark"
+                className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 py-8"
+                caption={label === "Open" ? "No open messages." : "Nothing handled yet."}
+              />
+            )}
           </div>
         </section>
       ))}

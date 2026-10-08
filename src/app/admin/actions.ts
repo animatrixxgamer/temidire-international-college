@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { assertStaff, assertSuperAdmin } from "@/lib/guards";
 import { audit } from "@/lib/audit";
+import { gradeFor } from "@/lib/grading";
+import { parseDay } from "@/lib/dates";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -119,6 +121,7 @@ export async function createAlbum(formData: FormData) {
   const album = await prisma.galleryAlbum.create({ data: { name, slug } });
   await audit("album.create", { entity: "GalleryAlbum", entityId: album.id, detail: name, session });
   revalidatePath("/admin/gallery");
+  revalidatePath("/gallery");
 }
 
 export async function addPhoto(formData: FormData) {
@@ -130,6 +133,7 @@ export async function addPhoto(formData: FormData) {
   const photo = await prisma.photo.create({ data: { albumId, src, alt } });
   await audit("photo.add", { entity: "Photo", entityId: photo.id, detail: src, session });
   revalidatePath("/admin/gallery");
+  revalidatePath("/gallery");
 }
 
 export async function deletePhoto(formData: FormData) {
@@ -140,6 +144,144 @@ export async function deletePhoto(formData: FormData) {
   await prisma.photo.delete({ where: { id } });
   await audit("photo.delete", { entity: "Photo", entityId: id, detail: photo.src, session });
   revalidatePath("/admin/gallery");
+  revalidatePath("/gallery");
+}
+
+/* ————— Attendance (Phase 2) ————— */
+
+type SaveResult = { ok: boolean; error?: string; saved?: number };
+
+const MARKS = ["PRESENT", "ABSENT", "LATE"] as const;
+
+const attendanceSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  marks: z.record(z.string().min(1).max(64), z.enum(MARKS)),
+});
+
+/** Persist one school day's register. Called debounced from the register UI. */
+export async function saveAttendance(input: {
+  date: string;
+  marks: Record<string, string>;
+}): Promise<SaveResult> {
+  const session = await assertStaff();
+  const parsed = attendanceSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid attendance payload" };
+
+  const entries = Object.entries(parsed.data.marks);
+  if (!entries.length) return { ok: true, saved: 0 };
+
+  // Only pupils that actually exist may be written.
+  const roster = await prisma.studentProfile.findMany({
+    where: { id: { in: entries.map(([id]) => id) } },
+    select: { id: true },
+  });
+  const allowed = new Set(roster.map((s) => s.id));
+  const date = parseDay(parsed.data.date);
+
+  const ops = entries
+    .filter(([studentId]) => allowed.has(studentId))
+    .map(([studentId, status]) =>
+      prisma.attendanceRecord.upsert({
+        where: { studentId_date: { studentId, date } },
+        update: { status, markedBy: session.id },
+        create: { studentId, date, status, markedBy: session.id },
+      }),
+    );
+  if (!ops.length) return { ok: true, saved: 0 };
+
+  await prisma.$transaction(ops);
+  await audit("attendance.save", {
+    entity: "AttendanceRecord",
+    detail: `${ops.length} marks on ${parsed.data.date}`,
+    session,
+  });
+  revalidatePath("/admin/attendance");
+  return { ok: true, saved: ops.length };
+}
+
+/* ————— Scores (Phase 2) ————— */
+
+const scoresSchema = z.object({
+  classroomId: z.string().min(1),
+  subjectId: z.string().min(1),
+  session: z.string().min(4).max(20),
+  term: z.number().int().min(1).max(3),
+  entries: z
+    .array(
+      z.object({
+        studentId: z.string().min(1),
+        ca: z.number().min(0).max(40),
+        exam: z.number().min(0).max(60),
+      }),
+    )
+    .max(60),
+});
+
+/** Persist CA/exam marks for one class + subject. Grades use the shared WAEC scale. */
+export async function saveScores(input: {
+  classroomId: string;
+  subjectId: string;
+  session: string;
+  term: number;
+  entries: Array<{ studentId: string; ca: number; exam: number }>;
+}): Promise<SaveResult> {
+  const session = await assertStaff();
+  const parsed = scoresSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid score payload" };
+
+  const { classroomId, subjectId, session: yr, term, entries } = parsed.data;
+  if (!entries.length) return { ok: true, saved: 0 };
+
+  const [classroom, subject, roster] = await Promise.all([
+    prisma.classroom.findUnique({ where: { id: classroomId }, select: { id: true } }),
+    prisma.subject.findUnique({ where: { id: subjectId }, select: { id: true } }),
+    prisma.studentProfile.findMany({
+      where: { classroomId, id: { in: entries.map((e) => e.studentId) } },
+      select: { id: true },
+    }),
+  ]);
+  if (!classroom || !subject) return { ok: false, error: "Unknown class or subject" };
+  const allowed = new Set(roster.map((s) => s.id));
+
+  const ops = entries
+    .filter((e) => allowed.has(e.studentId))
+    .map((e) => {
+      const total = e.ca + e.exam;
+      const grade = gradeFor(total).code;
+      return prisma.score.upsert({
+        where: {
+          studentId_subjectId_session_term: {
+            studentId: e.studentId,
+            subjectId,
+            session: yr,
+            term,
+          },
+        },
+        update: { ca: e.ca, exam: e.exam, total, grade, classroomId, enteredBy: session.id },
+        create: {
+          studentId: e.studentId,
+          subjectId,
+          classroomId,
+          session: yr,
+          term,
+          ca: e.ca,
+          exam: e.exam,
+          total,
+          grade,
+          enteredBy: session.id,
+        },
+      });
+    });
+  if (!ops.length) return { ok: true, saved: 0 };
+
+  await prisma.$transaction(ops);
+  await audit("score.save", {
+    entity: "Score",
+    detail: `${ops.length} marks · ${classroom.id} · ${subjectId} · ${yr} T${term}`,
+    session,
+  });
+  revalidatePath("/admin/scores");
+  return { ok: true, saved: ops.length };
 }
 
 /* ————— Inbox ————— */

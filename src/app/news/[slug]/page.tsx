@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Reveal } from "@/components/motion/primitives";
 import { TransitionLink } from "@/components/motion/PageTransition";
 import { prisma } from "@/lib/db";
+import { news as fallbackNews } from "@/content/siteContent";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,20 @@ const fmt = (d: Date) => d.toLocaleDateString("en-NG", { day: "numeric", month: 
 
 async function getPost(slug: string) {
   try {
-    return await prisma.newsPost.findUnique({ where: { slug } });
+    const post = await prisma.newsPost.findUnique({ where: { slug } });
+    if (post) return post;
   } catch {
-    return null;
+    /* fall through to the static fallback */
   }
+  // DB empty or unreachable: serve the static post so the link never 404s.
+  const fallback = fallbackNews.find((p) => p.slug === slug);
+  if (!fallback) return null;
+  return {
+    title: fallback.title,
+    body: fallback.body,
+    createdAt: new Date(fallback.date),
+    published: true,
+  };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

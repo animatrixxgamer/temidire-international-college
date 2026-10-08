@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { onImgError } from "@/lib/img";
 import {
   AnimatePresence,
   animate,
@@ -125,6 +126,7 @@ export function Gallery({ images }: { images: Array<{ src: string; alt: string }
               src={im.src}
               alt={im.alt}
               loading="lazy"
+              onError={onImgError}
               className="aspect-[4/3] w-full object-cover"
             />
           </button>
@@ -146,6 +148,7 @@ export function Gallery({ images }: { images: Array<{ src: string; alt: string }
               layoutId={`g-${open}`}
               src={images[open].src}
               alt={images[open].alt}
+              onError={onImgError}
               className="max-h-[85vh] max-w-full rounded-lg object-contain"
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
             />

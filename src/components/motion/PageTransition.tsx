@@ -1,29 +1,54 @@
 "use client";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { EASE_CURTAIN, EASE_OUT } from "./tokens";
 
-/* Curtain covers the page before navigation (TransitionLink) and lifts when the
-   next page mounts (template). Wire-up:
+/* Curtain covers the page during navigation and lifts once the next route has
+   mounted. Wire-up:
    1. RootClient wraps the app in <TransitionProvider>
    2. app/template.tsx re-exports the default below
-   3. Use <TransitionLink href="…"> instead of next/link for in-site nav. */
+   3. Use <TransitionLink href="…"> for in-site nav instead of a bare <a>.
 
-const Ctx = createContext<{ go: (href: string) => void }>({ go: () => {} });
+   The link itself is Next's <Link>, so the App Router owns the navigation
+   (prefetch, RSC fetch, scroll reset, history) — we only raise/lower the
+   curtain around it. The curtain MUST be reset on every route change, otherwise
+   it stays down over the finished page and the only way out is a hard refresh. */
+
+const Ctx = createContext<{ cover: () => void }>({ cover: () => {} });
 export const useTransitionGo = () => useContext(Ctx);
 
 export function TransitionProvider({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion();
-  const router = useRouter();
+  const pathname = usePathname();
   const [covering, setCovering] = useState(false);
-  const go = (href: string) => {
-    if (reduce) return router.push(href);
+  const seenPath = useRef(pathname);
+
+  /* Lift the curtain as soon as the destination route has mounted (its own
+     fade-in has started by then), so the screen is never left covered. */
+  useEffect(() => {
+    if (seenPath.current === pathname) return; // route hasn't changed yet
+    seenPath.current = pathname;
+    const lift = window.setTimeout(() => setCovering(false), 350);
+    return () => window.clearTimeout(lift);
+  }, [pathname]);
+
+  /* Safety net: if a navigation never lands (redirect back to the same route,
+     failed fetch), lift anyway rather than leaving a blank navy screen. */
+  useEffect(() => {
+    if (!covering) return;
+    const t = window.setTimeout(() => setCovering(false), 3000);
+    return () => window.clearTimeout(t);
+  }, [covering]);
+
+  const cover = useCallback(() => {
+    if (reduce) return;
     setCovering(true);
-    setTimeout(() => router.push(href), 650);
-  };
+  }, [reduce]);
+
   return (
-    <Ctx.Provider value={{ go }}>
+    <Ctx.Provider value={{ cover }}>
       {children}
       {!reduce && (
         <motion.div
@@ -44,24 +69,33 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
 export function TransitionLink({
   href,
   children,
+  onClick,
   ...rest
 }: {
   href: string;
   children: ReactNode;
 } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
-  const { go } = useContext(Ctx);
+  const { cover } = useContext(Ctx);
+  const pathname = usePathname();
+  const reduce = useReducedMotion();
+
   return (
-    <a
+    <Link
       href={href}
       {...rest}
       onClick={(e) => {
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-        e.preventDefault();
-        go(href);
+        onClick?.(e);
+        // Let the browser/Next handle modified clicks and non-primary buttons.
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        // Same-route (hash/scroll) links and reduced motion: no page swap to
+        // hide, so don't cover — Next still scrolls to the anchor.
+        const target = href.split(/[?#]/)[0];
+        if (reduce || target === pathname) return;
+        cover();
       }}
     >
       {children}
-    </a>
+    </Link>
   );
 }
 

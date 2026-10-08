@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/guards";
 import { createNewsPost, toggleNewsPost, deleteNewsPost } from "@/app/admin/actions";
+import { EmptyBook } from "@/components/motion/EmptyStates";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,13 @@ export default async function AdminNewsPage() {
             </div>
           </div>
         ))}
-        {posts.length === 0 && <p className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 p-8 text-center text-ivory-100/50">No posts yet.</p>}
+        {posts.length === 0 && (
+          <EmptyBook
+            tone="dark"
+            className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 py-8"
+            caption="No posts yet — publish the first one."
+          />
+        )}
       </div>
     </div>
   );

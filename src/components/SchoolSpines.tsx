@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { TransitionLink } from "@/components/motion/PageTransition";
+import { onImgError } from "@/lib/img";
 import { EASE_OUT } from "@/components/motion/tokens";
 import { schools } from "@/content/siteContent";
 
@@ -24,7 +25,7 @@ export default function SchoolSpines() {
           >
             <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+              <img src={s.image} alt="" className="h-full w-full object-cover" loading="lazy" onError={onImgError} />
               <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-transparent" />
             </div>
             <div className="relative mt-auto w-full p-5">

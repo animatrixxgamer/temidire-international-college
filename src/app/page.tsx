@@ -6,7 +6,7 @@ import { Marquee, CountUp, Gallery } from "@/components/motion/Extras";
 import { Section, Item } from "@/components/motion/SmoothReveal";
 import { Reveal, SplitHeading } from "@/components/motion/primitives";
 import { TransitionLink } from "@/components/motion/PageTransition";
-import { stats, testimonials, galleryImages, events as fallbackEvents, school } from "@/content/siteContent";
+import { stats, testimonials, galleryImages, events as fallbackEvents, news as fallbackNews, school } from "@/content/siteContent";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +22,13 @@ async function getNews() {
   } catch {
     /* fall through to placeholders */
   }
-  return [
-    { id: "1", slug: "admissions-open", title: "Admissions open for the 2026/2027 session", excerpt: "Places are available from Creche to SSS 1. Book a visit this month.", createdAt: new Date("2026-10-01") },
-    { id: "2", slug: "zonal-quiz", title: "Our JSS 3 team wins the zonal quiz", excerpt: "Five pupils beat 14 schools in Ondo to take the trophy home.", createdAt: new Date("2026-09-22") },
-  ];
+  return fallbackNews.slice(0, 4).map((p) => ({
+    id: String(p.id),
+    slug: p.slug,
+    title: p.title,
+    excerpt: p.excerpt,
+    createdAt: new Date(p.date),
+  }));
 }
 
 async function getEvents() {

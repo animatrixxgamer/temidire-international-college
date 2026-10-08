@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Reveal, SplitHeading } from "@/components/motion/primitives";
 import { TransitionLink } from "@/components/motion/PageTransition";
 import { prisma } from "@/lib/db";
-import { events as fallbackEvents } from "@/content/siteContent";
+import { events as fallbackEvents, news as fallbackNews } from "@/content/siteContent";
 
 export const metadata: Metadata = {
   title: "News & events",
@@ -19,9 +19,12 @@ export default async function NewsPage() {
     posts = await prisma.newsPost.findMany({ where: { published: true }, orderBy: { createdAt: "desc" } });
   } catch { /* fallback below */ }
   if (!posts.length) {
-    posts = fallbackEvents.map((e, i) => ({
-      id: String(i), slug: "admissions-open", title: "Admissions open for the 2026/2027 session",
-      excerpt: "Places are available from Creche to SSS 1. Book a visit this month.", createdAt: new Date("2026-10-01"),
+    posts = fallbackNews.map((p) => ({
+      id: String(p.id),
+      slug: p.slug,
+      title: p.title,
+      excerpt: p.excerpt,
+      createdAt: new Date(p.date),
     }));
   }
   let events: Array<{ id: string; title: string; date: Date; where: string | null }> = [];

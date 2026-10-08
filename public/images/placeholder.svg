@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Photograph to come">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1A33"/>
+      <stop offset="1" stop-color="#152C4F"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <g transform="translate(400 430) scale(1.6)" fill="none" stroke="#C9A24B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <path d="M-40 -110 L-30 -138 L-14 -122 L0 -144 L14 -122 L30 -138 L40 -110 Z"/>
+    <path d="M-60 -92 H60 V-2 C60 42 30 68 0 82 C-30 68 -60 42 -60 -2 Z"/>
+    <path d="M0 -92 V82"/>
+    <path d="M-60 -10 H60"/>
+    <path d="M-36 24 C-22 18 -8 18 0 24 C8 18 22 18 36 24 V48 C22 42 8 42 0 48 C-8 42 -22 42 -36 48 Z"/>
+    <path d="M-74 -86 C-90 -52 -90 8 -58 50"/>
+    <path d="M74 -86 C90 -52 90 8 58 50"/>
+  </g>
+  <text x="400" y="700" text-anchor="middle" fill="#C9A24B" font-family="Georgia, 'Times New Roman', serif" font-size="44">Temidire</text>
+  <text x="400" y="744" text-anchor="middle" fill="#F5F1E6" font-family="Georgia, 'Times New Roman', serif" font-size="22" opacity="0.65">Photograph to come</text>
+</svg>

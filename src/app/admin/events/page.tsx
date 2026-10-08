@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireStaff } from "@/lib/guards";
 import { createEvent, deleteEvent } from "@/app/admin/actions";
+import { EmptyCalendar } from "@/components/motion/EmptyStates";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,13 @@ export default async function AdminEventsPage() {
             </form>
           </div>
         ))}
-        {events.length === 0 && <p className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 p-8 text-center text-ivory-100/50">No events yet.</p>}
+        {events.length === 0 && (
+          <EmptyCalendar
+            tone="dark"
+            className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 py-8"
+            caption="Nothing scheduled — add the first event."
+          />
+        )}
       </div>
     </div>
   );

@@ -104,11 +104,42 @@ export const routes = [
   { id: "r4", name: "Ife Road", stops: ["Ife Road Filling Station", "Oke-Odo", "Market Square", "School"], pickup: "6:55am", termFee: 32000 },
 ];
 
+/** Fallback posts — used when the news table is empty or unreachable, so every
+ *  `/news/...` link on the site still resolves to a real page. Slugs match the
+ *  ones the admin CMS generates. */
 export const news = [
-  { id: 1, date: "2026-10-01", title: "Admissions open for the 2026/2027 session", excerpt: "Places are available from Creche to SSS 1. Book a visit this month." },
-  { id: 2, date: "2026-09-22", title: "Our JSS 3 team wins the zonal quiz", excerpt: "Five pupils beat 14 schools in Ondo to take the trophy home." },
-  { id: 3, date: "2026-09-10", title: "New science laboratory opens", excerpt: "Every SSS class now has weekly practical sessions in the new lab." },
-  { id: 4, date: "2026-08-28", title: "Inter-house sports day: results and photos", excerpt: "Gold House takes the cup after a close finish in the relay." },
+  {
+    id: 1,
+    slug: "admissions-open-for-the-2026-2027-session",
+    date: "2026-10-01",
+    title: "Admissions open for the 2026/2027 session",
+    excerpt: "Places are available from Creche to SSS 1. Book a visit this month.",
+    body: "Places are open from Creche to SSS 1 for the 2026/2027 session, and the school office is receiving applications now. Book a campus visit this month — sit in a lesson on an ordinary day, meet the class teacher, and judge the school by what you see.\n\nEvery application is answered within a week, and entrance assessments run on the dates published on the admissions page.",
+  },
+  {
+    id: 2,
+    slug: "our-jss-3-team-wins-the-zonal-quiz",
+    date: "2026-09-22",
+    title: "Our JSS 3 team wins the zonal quiz",
+    excerpt: "Five pupils beat 14 schools in Ondo to take the trophy home.",
+    body: "Five pupils from JSS 3 beat 14 schools across Ondo to take the zonal quiz trophy home. The team trained after closing for three weeks with Mr. Ogunleye, and came from behind in the final round.\n\nThey now go on to the state competition in November. We are proud of all five.",
+  },
+  {
+    id: 3,
+    slug: "new-science-laboratory-opens",
+    date: "2026-09-10",
+    title: "New science laboratory opens",
+    excerpt: "Every SSS class now has weekly practical sessions in the new lab.",
+    body: "The new laboratory seats forty at a time and is equipped for chemistry, biology and physics practicals. Every SSS class now has a weekly session there, and JSS classes visit twice a term.\n\nIt was funded partly by the Parents–Teachers Association, and we are grateful to everyone who gave.",
+  },
+  {
+    id: 4,
+    slug: "inter-house-sports-day-results-and-photos",
+    date: "2026-08-28",
+    title: "Inter-house sports day: results and photos",
+    excerpt: "Gold House takes the cup after a close finish in the relay.",
+    body: "Gold House took the cup after a close finish in the senior relay, with Blue House second by a single point. House positions for the term are now on the noticeboard.\n\nPhotographs from the day — the relay, the marches and the crowd — are in the gallery.",
+  },
 ];
 
 export const events = [
@@ -179,15 +210,81 @@ export const gradingSystem = [
   { grade: "F9", range: "0–39", remark: "Fail" },
 ];
 
+/** Real photographs in public/images. `album` drives the filter chips on /gallery. */
 export const galleryImages = [
-  { src: "/images/assembly.webp", alt: "Morning assembly" },
-  { src: "/images/science-lab.webp", alt: "Science laboratory session" },
-  { src: "/images/sports-day.webp", alt: "Inter-house sports relay" },
-  { src: "/images/library.webp", alt: "The school library" },
-  { src: "/images/computer-lab.webp", alt: "Computer laboratory" },
-  { src: "/images/graduation.webp", alt: "Graduation day" },
-  { src: "/images/playground.webp", alt: "Playground break time" },
-  { src: "/images/school-bus.webp", alt: "School bus at the gate" },
+  { id: "assembly", src: "/images/assembly.webp", alt: "Morning assembly on the courtyard", album: "Campus life", caption: "Rows of pupils in navy uniforms line up for assembly" },
+  { id: "playground", src: "/images/playground.webp", alt: "Children playing on the school playground", album: "Campus life", caption: "Break time on the playground" },
+  { id: "school-bus", src: "/images/school-bus.webp", alt: "Pupils boarding the school bus", album: "Campus life", caption: "The bus at the gate after closing" },
+  { id: "library", src: "/images/library.webp", alt: "Quiet school library with wooden shelves", album: "Classrooms", caption: "Reading period in the library" },
+  { id: "computer-lab", src: "/images/computer-lab.webp", alt: "Students at desktop computers in the school computer room", album: "Classrooms", caption: "Computer studies, two pupils to a machine" },
+  { id: "classroom", src: "/images/classroom.webp", alt: "Wide shot of a secondary classroom in session", album: "Classrooms", caption: "A secondary class mid-lesson" },
+  { id: "science-lab", src: "/images/science-lab.webp", alt: "Modern school science lab with microscopes and glassware", album: "Science", caption: "Practical work at the lab benches" },
+  { id: "sports-day", src: "/images/sports-day.webp", alt: "Children in house colours running a relay", album: "Sports", caption: "Inter-house relay on sports day" },
+  { id: "graduation", src: "/images/graduation.webp", alt: "Graduates in navy gowns throwing their caps", album: "Celebrations", caption: "Leavers throw their caps at the closing ceremony" },
 ];
 
 export const naira = (n: number) => "₦" + n.toLocaleString("en-NG");
+
+/** Sample week for the student/parent portal timetable.
+ *  Real per-class timetables arrive with the Phase 2 schema. */
+export const portalTimetable = {
+  Mon: [
+    { id: "mon-1", start: "08:00", end: "08:45", subject: "Assembly", room: "Courtyard" },
+    { id: "mon-2", start: "08:45", end: "09:30", subject: "Mathematics", teacher: "Mr. Kayode Ogunleye", room: "Room 12" },
+    { id: "mon-3", start: "09:30", end: "10:15", subject: "English Language", teacher: "Mrs. Folake Ajayi", room: "Room 12" },
+    { id: "mon-4", start: "10:15", end: "10:45", subject: "Break", kind: "break" as const },
+    { id: "mon-5", start: "10:45", end: "11:30", subject: "Basic Science", teacher: "Mr. Kayode Ogunleye", room: "Lab 1" },
+    { id: "mon-6", start: "11:30", end: "12:15", subject: "Civic Education", teacher: "Mrs. Ronke Adegoke", room: "Room 12" },
+    { id: "mon-7", start: "12:15", end: "13:00", subject: "Lunch", kind: "break" as const },
+    { id: "mon-8", start: "13:00", end: "13:45", subject: "Yoruba", teacher: "Miss Damilola Ojo", room: "Room 12" },
+    { id: "mon-9", start: "13:45", end: "14:30", subject: "Creative Arts", teacher: "Mrs. Titilayo Bamidele", room: "Art room" },
+  ],
+  Tue: [
+    { id: "tue-1", start: "08:00", end: "08:45", subject: "Morning reading", room: "Room 12" },
+    { id: "tue-2", start: "08:45", end: "09:30", subject: "Mathematics", teacher: "Mr. Kayode Ogunleye", room: "Room 12" },
+    { id: "tue-3", start: "09:30", end: "10:15", subject: "Social Studies", teacher: "Mrs. Ronke Adegoke", room: "Room 12" },
+    { id: "tue-4", start: "10:15", end: "10:45", subject: "Break", kind: "break" as const },
+    { id: "tue-5", start: "10:45", end: "11:30", subject: "English Language", teacher: "Mrs. Folake Ajayi", room: "Room 12" },
+    { id: "tue-6", start: "11:30", end: "12:15", subject: "Computer Studies", teacher: "Mr. Adebayo Fasanya", room: "Computer room" },
+    { id: "tue-7", start: "12:15", end: "13:00", subject: "Lunch", kind: "break" as const },
+    { id: "tue-8", start: "13:00", end: "13:45", subject: "Physical Education", teacher: "Mr. Tunde Ogundele", room: "Field" },
+    { id: "tue-9", start: "13:45", end: "14:30", subject: "Library period", room: "Library" },
+  ],
+  Wed: [
+    { id: "wed-1", start: "08:00", end: "08:45", subject: "Devotion", room: "Hall" },
+    { id: "wed-2", start: "08:45", end: "09:30", subject: "Basic Science", teacher: "Mr. Kayode Ogunleye", room: "Lab 1" },
+    { id: "wed-3", start: "09:30", end: "10:15", subject: "Mathematics", teacher: "Mr. Kayode Ogunleye", room: "Room 12" },
+    { id: "wed-4", start: "10:15", end: "10:45", subject: "Break", kind: "break" as const },
+    { id: "wed-5", start: "10:45", end: "11:30", subject: "Creative Arts", teacher: "Mrs. Titilayo Bamidele", room: "Art room" },
+    { id: "wed-6", start: "11:30", end: "12:15", subject: "English Language", teacher: "Mrs. Folake Ajayi", room: "Room 12" },
+    { id: "wed-7", start: "12:15", end: "13:00", subject: "Lunch", kind: "break" as const },
+    { id: "wed-8", start: "13:00", end: "14:30", subject: "Inter-house sports", teacher: "Mr. Tunde Ogundele", room: "Field" },
+  ],
+  Thu: [
+    { id: "thu-1", start: "08:00", end: "08:45", subject: "Morning reading", room: "Room 12" },
+    { id: "thu-2", start: "08:45", end: "09:30", subject: "English Language", teacher: "Mrs. Folake Ajayi", room: "Room 12" },
+    { id: "thu-3", start: "09:30", end: "10:15", subject: "Basic Technology", teacher: "Mr. Adebayo Fasanya", room: "Workshop" },
+    { id: "thu-4", start: "10:15", end: "10:45", subject: "Break", kind: "break" as const },
+    { id: "thu-5", start: "10:45", end: "11:30", subject: "Mathematics", teacher: "Mr. Kayode Ogunleye", room: "Room 12" },
+    { id: "thu-6", start: "11:30", end: "12:15", subject: "Civic Education", teacher: "Mrs. Ronke Adegoke", room: "Room 12" },
+    { id: "thu-7", start: "12:15", end: "13:00", subject: "Lunch", kind: "break" as const },
+    { id: "thu-8", start: "13:00", end: "13:45", subject: "Yoruba", teacher: "Miss Damilola Ojo", room: "Room 12" },
+    { id: "thu-9", start: "13:45", end: "14:30", subject: "Music", teacher: "Mrs. Titilayo Bamidele", room: "Music room" },
+  ],
+  Fri: [
+    { id: "fri-1", start: "08:00", end: "08:45", subject: "Assembly", room: "Courtyard" },
+    { id: "fri-2", start: "08:45", end: "09:30", subject: "Mathematics", teacher: "Mr. Kayode Ogunleye", room: "Room 12" },
+    { id: "fri-3", start: "09:30", end: "10:15", subject: "English Language", teacher: "Mrs. Folake Ajayi", room: "Room 12" },
+    { id: "fri-4", start: "10:15", end: "10:45", subject: "Break", kind: "break" as const },
+    { id: "fri-5", start: "10:45", end: "11:30", subject: "Quiz & club activities", teacher: "Mr. Kayode Ogunleye", room: "Hall" },
+    { id: "fri-6", start: "11:30", end: "12:15", subject: "Close of week", kind: "break" as const },
+  ],
+};
+
+/** Demo fee position for the portal. Real balances come from the fee table in Phase 3. */
+export const portalFees = {
+  level: "Primary 1–6",
+  paid: 85000,
+  total: 140000,
+  status: "PARTIAL" as const,
+};

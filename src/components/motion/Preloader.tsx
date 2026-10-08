@@ -1,11 +1,24 @@
 "use client";
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 const VIEWBOX = "0 0 240 290";
 const NAVY = "#13243b";
 const GOLD = "#C9A24B";
 const IVORY = "#F4EFE6";
+
+// Timing is compressed so the intro never feels like a wait. `step` is the gap
+// between one stroke starting and the next.
+const STEP = 0.22;
+const STROKE_MS = 520;
+
+// Hard ceiling: if the stroke animation has not finished by now (e.g. the tab
+// was opened in the background and requestAnimationFrame is throttled, so
+// onAnimationComplete never fires), we dismiss anyway. This is the guarantee
+// that the overlay can never sit over the page and swallow every click.
+const ENTRY_CEILING_MS = 4000;
+// Time we allow the exit wipe to play before unmounting outright.
+const EXIT_MS = 900;
 
 // Stroke-draw sequence for the preloader: crown → inner ring → book → lamp →
 // star → laurel → motto. Each entry is a path + optional mirror flag.
@@ -40,109 +53,149 @@ const STROKES = [
 
 const TOTAL = STROKES.length;
 
+type Phase = "idle" | "play" | "closing" | "gone";
+
 export default function Preloader({ onDone }: { onDone?: () => void }) {
   const reduce = useReducedMotion();
-  const [show, setShow] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
   const [doneIdx, setDoneIdx] = useState(-1);
+  const doneNotified = useRef(false);
+  const decided = useRef(false);
 
-  useEffect(() => {
-    if (sessionStorage.getItem("tmd-preloaded")) return;
-    setShow(true);
-    sessionStorage.setItem("tmd-preloaded", "1");
-  }, []);
-
-  const finish = () => {
-    setShow(false);
+  const notifyDone = useCallback(() => {
+    if (doneNotified.current) return;
+    doneNotified.current = true;
     onDone?.();
-  };
+  }, [onDone]);
 
-  const lastTiming = STROKES[TOTAL - 1];
-  const lastDelay = (lastTiming.delay ?? 0) * 0.9 + 0.9;
+  // Start closing (either naturally or by click). A wall-clock timer — not an
+  // animation callback — is what guarantees the overlay is finally removed.
+  const close = useCallback(() => {
+    setPhase((p) => (p === "play" || p === "idle" ? "closing" : p));
+    window.setTimeout(() => {
+      setPhase("gone");
+      notifyDone();
+    }, reduce ? 50 : EXIT_MS);
+  }, [notifyDone, reduce]);
+
+  // Decide once, on mount, whether to play the intro at all.
+  useEffect(() => {
+    if (decided.current) return; // survives StrictMode's double-invoke
+    decided.current = true;
+    // Skip the whole intro in a background tab: requestAnimationFrame is
+    // throttled there, so the crest would never finish drawing.
+    if (typeof document !== "undefined" && document.hidden) {
+      setPhase("gone");
+      notifyDone();
+      return;
+    }
+    try {
+      if (sessionStorage.getItem("tmd-preloaded")) {
+        setPhase("gone");
+        notifyDone();
+        return;
+      }
+      sessionStorage.setItem("tmd-preloaded", "1");
+    } catch {
+      /* storage blocked (private mode) — show the intro once, it self-dismisses */
+    }
+    setPhase("play");
+  }, [notifyDone]);
+
+  // While the intro is playing, hold a wall-clock ceiling so a throttled tab
+  // (or a stuck animation) can never leave the overlay covering the page.
+  useEffect(() => {
+    if (phase !== "play") return;
+    const ceiling = window.setTimeout(close, reduce ? 300 : ENTRY_CEILING_MS);
+    return () => window.clearTimeout(ceiling);
+  }, [phase, close, reduce]);
+
+  if (phase === "gone") return null;
+
+  const closing = phase === "closing";
 
   return (
-    <AnimatePresence onExitComplete={onDone}>
-      {show && (
+    <div
+      className="fixed inset-0 z-[10000] grid cursor-pointer place-items-center bg-transparent"
+      onClick={close}
+      role="button"
+      aria-label="Skip intro"
+      // Never let the overlay intercept clicks once it is on its way out.
+      style={{ pointerEvents: closing ? "none" : "auto" }}
+    >
+      {/* curtain wipe: two halves slide apart */}
+      {[0, 1].map((i) => (
         <motion.div
-          key="pre"
-          className="fixed inset-0 z-[10000] grid cursor-pointer place-items-center bg-transparent"
-          onClick={finish}
-          role="button"
-          aria-label="Skip intro"
-        >
-          {/* curtain wipe: two halves slide apart */}
-          {[0, 1].map((i) => (
-            <motion.div
-              key={i}
-              className="absolute inset-y-0 w-1/2 bg-navy-950"
-              style={{ left: i ? "50%" : 0 }}
-              exit={{
-                y: i ? "100%" : "-100%",
-                transition: {
-                  duration: reduce ? 0.01 : 0.9,
-                  ease: [0.76, 0, 0.24, 1],
-                  delay: i * 0.08,
-                },
-              }}
-            />
-          ))}
+          key={i}
+          className="absolute inset-y-0 w-1/2 bg-navy-950"
+          style={{ left: i ? "50%" : 0 }}
+          initial={{ y: 0 }}
+          animate={closing ? { y: i ? "100%" : "-100%" } : { y: 0 }}
+          transition={{
+            duration: reduce ? 0.01 : 0.9,
+            ease: [0.76, 0, 0.24, 1],
+            delay: closing ? i * 0.08 : 0,
+          }}
+        />
+      ))}
 
-          {/* crest stroke-draw */}
-          <motion.svg
-            viewBox={VIEWBOX}
-            className="relative h-56 w-48"
-            role="img"
-            aria-label="Loading"
-            exit={{ opacity: 0, transition: { duration: 0.25 } }}
-          >
-            {STROKES.map((s, idx) => {
-              const isLast = idx === TOTAL - 1;
-              return (
-                <motion.path
-                  key={idx}
-                  d={s.d}
-                  fill={s.fill ?? "none"}
-                  stroke={s.stroke ? GOLD : "none"}
-                  strokeWidth={s.fill ? (s.shield ? 0 : 2) : 3}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{
-                    duration: reduce ? 0.01 : 0.9,
-                    delay: reduce ? 0 : (s.delay ?? 0) * 0.9,
-                    ease: "easeInOut",
-                  }}
-                  onAnimationComplete={
-                    isLast
-                      ? () => {
-                          setDoneIdx(idx);
-                          setTimeout(finish, reduce ? 0 : 700);
-                        }
-                      : undefined
-                  }
-                />
-              );
-            })}
-            {/* motto text fades in after ribbon */}
-            <motion.text
-              x="120"
-              y="278"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="11"
-              letterSpacing="3"
-              fill={GOLD}
-              fontFamily="Georgia, 'Times New Roman', serif"
-              fontWeight="700"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: doneIdx >= 0 ? 1 : 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-            >
-              SCIENTIA  ·  ET  ·  VIRTUS
-            </motion.text>
-          </motion.svg>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      {/* crest stroke-draw */}
+      <motion.svg
+        viewBox={VIEWBOX}
+        className="relative h-56 w-48"
+        role="img"
+        aria-label="Loading"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: closing ? 0 : 1 }}
+        transition={{ duration: reduce ? 0.01 : 0.25 }}
+      >
+        {STROKES.map((s, idx) => {
+          const isLast = idx === TOTAL - 1;
+          return (
+            <motion.path
+              key={idx}
+              d={s.d}
+              fill={s.fill ?? "none"}
+              stroke={s.stroke ? GOLD : "none"}
+              strokeWidth={s.fill ? (s.shield ? 0 : 2) : 3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{
+                duration: reduce ? 0.01 : STROKE_MS / 1000,
+                delay: reduce ? 0 : (s.delay ?? 0) * STEP,
+                ease: "easeInOut",
+              }}
+              onAnimationComplete={
+                isLast
+                  ? () => {
+                      setDoneIdx(idx);
+                      window.setTimeout(close, reduce ? 0 : 500);
+                    }
+                  : undefined
+              }
+            />
+          );
+        })}
+        {/* motto text fades in after ribbon */}
+        <motion.text
+          x="120"
+          y="278"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="11"
+          letterSpacing="3"
+          fill={GOLD}
+          fontFamily="Georgia, 'Times New Roman', serif"
+          fontWeight="700"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: doneIdx >= 0 ? 1 : 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          SCIENTIA  ·  ET  ·  VIRTUS
+        </motion.text>
+      </motion.svg>
+    </div>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
+import NextLink from "next/link";
 import { ReactNode, useRef } from "react";
 import { motion, useInView, useScroll, useSpring, useReducedMotion, useTransform } from "framer-motion";
 import { EASE_OUT, EASE_CURTAIN } from "./tokens";
+import { onImgError } from "@/lib/img";
 
 /** Rise / blur / mask reveal. Wrap anything. */
 export function Reveal({
@@ -96,6 +98,7 @@ export function ImageReveal({
         src={src}
         alt={alt}
         loading="lazy"
+        onError={onImgError}
         style={reduce ? undefined : { y, scale: 1.12 }}
         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
       />
@@ -103,16 +106,17 @@ export function ImageReveal({
   );
 }
 
-/** Link with an underline that draws in. */
+/** Link with an underline that draws in. next/link (not a bare <a>) so in-site
+ *  clicks never trigger a full page reload. */
 export function DrawLink({ href, children, className = "" }: { href: string; children: ReactNode; className?: string }) {
   return (
-    <a href={href} className={`relative inline-block ${className}`}>
+    <NextLink href={href} className={`relative inline-block ${className}`}>
       {children}
       <span
         aria-hidden
-        className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-gold-500 transition-transform duration-300 ease-out [a:hover>&]:scale-x-100 [a:focus-visible>&]:scale-x-100"
+        className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-gold-500 transition-transform duration-300 ease-out [a:hover>&]:scale-x-100        [a:focus-visible>&]:scale-x-100"
       />
-    </a>
+    </NextLink>
   );
 }
 
