@@ -173,6 +173,19 @@ async function main() {
     create: { key: "current_term", value: "1" },
   });
 
+  // Term windows — report-card attendance only counts marks inside these dates.
+  const termDates: Array<[string, string]> = [
+    ["term_1_start", "2026-09-01"],
+    ["term_1_end", "2026-12-18"],
+    ["term_2_start", "2027-01-05"],
+    ["term_2_end", "2027-03-27"],
+    ["term_3_start", "2027-04-20"],
+    ["term_3_end", "2027-07-10"],
+  ];
+  for (const [key, value] of termDates) {
+    await prisma.settings.upsert({ where: { key }, update: { value }, create: { key, value } });
+  }
+
   // ——— Demo pupils (JSS 1 A) so scores, report cards and the portal have data ———
   const jss1 = await prisma.classroom.findFirst({ where: { name: "JSS 1 A" } });
   const demoSession = "2026/2027";
@@ -259,6 +272,28 @@ async function main() {
 
       if (!publishedPupilId) publishedPupilId = profile.id;
       pupilNo++;
+    }
+
+    // ——— Demo timetable for JSS 1 A (day 1–5, lesson period 1–8) ———
+    const vp = await prisma.staffProfile.findFirst({
+      where: { roleTitle: { contains: "Vice Principal (Academics)" } },
+    });
+    const byCode = new Map(subjects.map((s) => [s.code, s.id]));
+    const demoWeek: Array<[number, number, string]> = [
+      [1, 1, "MTH"], [1, 2, "ENG"], [1, 3, "BIO"], [1, 4, "CHM"], [1, 5, "PHY"],
+      [2, 1, "ENG"], [2, 2, "MTH"], [2, 3, "PHY"], [2, 4, "BIO"],
+      [3, 1, "MTH"], [3, 2, "CHM"], [3, 3, "ENG"],
+      [4, 1, "BIO"], [4, 2, "MTH"], [4, 3, "ENG"], [4, 4, "PHY"],
+      [5, 1, "MTH"], [5, 2, "ENG"], [5, 3, "CHM"],
+    ];
+    for (const [day, period, code] of demoWeek) {
+      const subjectId = byCode.get(code);
+      if (!subjectId) continue;
+      await prisma.timetableSlot.upsert({
+        where: { classroomId_day_period: { classroomId: jss1.id, day, period } },
+        update: { subjectId, teacherId: vp?.id ?? null },
+        create: { classroomId: jss1.id, day, period, subjectId, teacherId: vp?.id ?? null },
+      });
     }
 
     // One parent login, linked to the first pupil.

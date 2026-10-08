@@ -7,6 +7,12 @@ export const dynamic = "force-dynamic";
 const KNOWN: Array<[string, string]> = [
   ["current_session", "Current session (e.g. 2026/2027)"],
   ["current_term", "Current term (1, 2 or 3)"],
+  ["term_1_start", "Term 1 starts (YYYY-MM-DD)"],
+  ["term_1_end", "Term 1 ends (YYYY-MM-DD)"],
+  ["term_2_start", "Term 2 starts (YYYY-MM-DD)"],
+  ["term_2_end", "Term 2 ends (YYYY-MM-DD)"],
+  ["term_3_start", "Term 3 starts (YYYY-MM-DD)"],
+  ["term_3_end", "Term 3 ends (YYYY-MM-DD)"],
   ["school_phone", "School phone number"],
   ["school_whatsapp", "WhatsApp number (international, no +)"],
   ["school_email", "School email"],

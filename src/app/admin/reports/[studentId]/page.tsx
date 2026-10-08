@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/guards";
 import { prisma } from "@/lib/db";
 import { buildClassReport, ordinal, remarkFor, attendanceTally, type ScoreRow } from "@/lib/report";
+import { dayRange, termStartKey, termEndKey } from "@/lib/dates";
 import { saveResultRemarks, setResultPublished } from "@/app/admin/actions";
 import { school } from "@/content/siteContent";
 import PrintButton from "@/components/dashboard/PrintButton";
@@ -35,12 +36,23 @@ export default async function ReportCardPage({
   const session = q.session || sessionRow?.value || "2026/2027";
   const term = Math.min(3, Math.max(1, Number(q.term || termRow?.value || "1") || 1));
 
+  // Attendance counts only inside the term's own window (Settings → Term N start/end).
+  const [termStart, termEnd] = await Promise.all([
+    prisma.settings.findUnique({ where: { key: termStartKey(term) } }),
+    prisma.settings.findUnique({ where: { key: termEndKey(term) } }),
+  ]);
+  const window = dayRange(termStart?.value, termEnd?.value);
+  const windowed = Boolean(window.gte || window.lte);
+
   const [scores, attendance, sheet] = await Promise.all([
     prisma.score.findMany({
       where: { studentId: student.id, session, term },
       include: { subject: { select: { code: true, name: true } } },
     }),
-    prisma.attendanceRecord.findMany({ where: { studentId: student.id }, select: { status: true } }),
+    prisma.attendanceRecord.findMany({
+      where: { studentId: student.id, ...(windowed ? { date: window } : {}) },
+      select: { status: true },
+    }),
     prisma.resultSheet.findUnique({
       where: { studentId_session_term: { studentId: student.id, session, term } },
     }),
@@ -180,11 +192,18 @@ export default async function ReportCardPage({
 
         <div className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
           <div className="rounded-lg border border-navy-950/10 p-3">
-            <p className="text-xs uppercase tracking-wider text-navy-700/60">Attendance (to date)</p>
+            <p className="text-xs uppercase tracking-wider text-navy-700/60">
+              Attendance · Term {term}
+            </p>
             <p className="mt-1">
               Present {attendance_.present} · Late {attendance_.late} · Absent{" "}
               {attendance_.absent} <span className="text-navy-700/60">({attendance_.total} days marked)</span>
             </p>
+            {!windowed && (
+              <p className="mt-1 text-xs text-navy-700/50">
+                No term dates set — counting every recorded mark. Set them in Settings.
+              </p>
+            )}
           </div>
           <div className="rounded-lg border border-navy-950/10 p-3">
             <p className="text-xs uppercase tracking-wider text-navy-700/60">Form remark</p>

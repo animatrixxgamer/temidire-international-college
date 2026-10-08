@@ -477,3 +477,65 @@ export async function setResultPublished(formData: FormData) {
   revalidatePath("/admin/reports");
   revalidatePath("/portal");
 }
+
+/* ————— Timetable (Phase 2) ————— */
+
+const timetableSchema = z.object({
+  classroomId: z.string().min(1),
+  slots: z
+    .array(
+      z.object({
+        day: z.number().int().min(1).max(5),
+        period: z.number().int().min(1).max(8),
+        subjectId: z.string().min(1),
+      }),
+    )
+    .max(40),
+});
+
+/**
+ * Replace a class's whole week in one save. "No stored slot" means free period,
+ * so an empty cell must clear any slot that was there before — hence delete-then-create.
+ */
+export async function saveTimetable(input: {
+  classroomId: string;
+  slots: Array<{ day: number; period: number; subjectId: string }>;
+}): Promise<SaveResult> {
+  const session = await assertStaff();
+  const parsed = timetableSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid timetable payload" };
+  const { classroomId, slots } = parsed.data;
+
+  const classroom = await prisma.classroom.findUnique({
+    where: { id: classroomId },
+    select: { id: true, arm: true },
+  });
+  if (!classroom) return { ok: false, error: "Unknown class" };
+
+  // Only subjects belonging to this class's arm may be placed on its timetable.
+  const subjects = slots.length
+    ? await prisma.subject.findMany({
+        where: { id: { in: slots.map((s) => s.subjectId) } },
+        select: { id: true, arm: true },
+      })
+    : [];
+  const allowed = new Set(subjects.filter((s) => s.arm === classroom.arm).map((s) => s.id));
+  const keep = slots.filter((s) => allowed.has(s.subjectId));
+
+  await prisma.$transaction([
+    prisma.timetableSlot.deleteMany({ where: { classroomId } }),
+    ...keep.map((s) =>
+      prisma.timetableSlot.create({
+        data: { classroomId, day: s.day, period: s.period, subjectId: s.subjectId },
+      }),
+    ),
+  ]);
+  await audit("timetable.save", {
+    entity: "TimetableSlot",
+    detail: `${keep.length} periods · ${classroom.id}`,
+    session,
+  });
+  revalidatePath("/admin/timetable");
+  revalidatePath("/portal");
+  return { ok: true, saved: keep.length };
+}

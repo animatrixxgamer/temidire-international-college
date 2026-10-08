@@ -9,6 +9,7 @@ import { getSession } from "@/lib/auth-server";
 import { isStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildClassReport, ordinal } from "@/lib/report";
+import { buildWeek } from "@/lib/timetable";
 import { portalTimetable, portalFees, school } from "@/content/siteContent";
 
 export const metadata: Metadata = { title: "Student portal" };
@@ -117,6 +118,33 @@ export default async function PortalPage() {
     }
   }
 
+  // The class's real timetable, teacher names resolved from their profiles.
+  const slots = profile?.classroomId
+    ? await prisma.timetableSlot.findMany({
+        where: { classroomId: profile.classroomId },
+        include: { subject: { select: { name: true } } },
+      })
+    : [];
+  const teacherIds = [...new Set(slots.map((s) => s.teacherId).filter(Boolean))] as string[];
+  const staff = teacherIds.length
+    ? await prisma.staffProfile.findMany({
+        where: { id: { in: teacherIds } },
+        include: { user: { select: { name: true } } },
+      })
+    : [];
+  const teacherName = new Map(staff.map((s) => [s.id, s.user.name]));
+  const week = buildWeek(
+    slots
+      .filter((s) => s.subject)
+      .map((s) => ({
+        day: s.day,
+        period: s.period,
+        subjectName: s.subject!.name,
+        teacher: s.teacherId ? teacherName.get(s.teacherId) : undefined,
+      })),
+  );
+  const hasTimetable = Object.keys(week).length > 0;
+
   return (
     <main className="pt-16">
       <section className="mx-auto max-w-6xl px-6 pb-24 pt-20">
@@ -174,7 +202,15 @@ export default async function PortalPage() {
 
           <Reveal delay={0.08}>
             <h2 className="font-serif text-2xl">Today’s timetable</h2>
-            <TodayTimetable week={portalTimetable} className="mt-4" />
+            <TodayTimetable
+              week={hasTimetable ? week : portalTimetable}
+              className="mt-4"
+            />
+            {!hasTimetable && (
+              <p className="mt-2 text-xs text-ivory-100/40">
+                Preview timetable — the school has not published this class’s week yet.
+              </p>
+            )}
           </Reveal>
 
           <Reveal delay={0.1}>
