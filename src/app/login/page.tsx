@@ -45,7 +45,7 @@ function LoginForm() {
       <div className="w-full max-w-sm rounded-3xl border border-ivory-100/10 bg-navy-800/60 p-8 backdrop-blur">
         <Crest className="mx-auto h-20 w-16" motto="" />
         <h1 className="mt-4 text-center font-serif text-2xl">Portal login</h1>
-        <p className="mt-1 text-center text-sm text-ivory-100/60">Staff, admin and school management</p>
+        <p className="mt-1 text-center text-sm text-ivory-100/60">Staff, students and parents</p>
         <form onSubmit={submit} className="mt-8 space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium">Email</label>
@@ -86,7 +86,7 @@ function LoginForm() {
           </button>
         </form>
         <p className="mt-6 text-center text-xs text-ivory-100/40">
-          Student & parent portals arrive in Phase 2.
+          Students, parents and staff all sign in here — we take you to the right place.
         </p>
       </div>
     </motion.main>

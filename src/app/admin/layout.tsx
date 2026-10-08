@@ -10,6 +10,7 @@ const NAV = [
   ["/admin/applications", "Applications"],
   ["/admin/attendance", "Attendance"],
   ["/admin/scores", "Scores"],
+  ["/admin/reports", "Reports"],
   ["/admin/news", "News"],
   ["/admin/events", "Events"],
   ["/admin/gallery", "Gallery"],
@@ -21,7 +22,7 @@ const NAV = [
 
 const STAFF_ONLY = ["/admin/users", "/admin/settings"];
 /** Preview tools — hidden from roles that never touch registers or marks. */
-const TEACHING_ONLY = ["/admin/attendance", "/admin/scores"];
+const TEACHING_ONLY = ["/admin/attendance", "/admin/scores", "/admin/reports"];
 
 const ago = (d: Date) => {
   const mins = Math.round((Date.now() - d.getTime()) / 60000);

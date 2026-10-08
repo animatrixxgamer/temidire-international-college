@@ -373,3 +373,107 @@ export async function setSetting(formData: FormData) {
   await audit("settings.set", { entity: "Settings", entityId: key, detail: `${key} = ${value.slice(0, 80)}`, session });
   revalidatePath("/admin/settings");
 }
+
+/* ————— Report cards (Phase 2) ————— */
+
+const remarksSchema = z.object({
+  studentId: z.string().min(1),
+  session: z.string().min(4).max(20),
+  term: z.number().int().min(1).max(3),
+  teacherRemark: z.string().max(1000).optional(),
+  principalRemark: z.string().max(1000).optional(),
+});
+
+/** Save the class-teacher and principal comments on one pupil's term result. */
+export async function saveResultRemarks(formData: FormData) {
+  const session = await assertStaff();
+  const parsed = remarksSchema.safeParse({
+    studentId: formData.get("studentId"),
+    session: formData.get("session"),
+    term: Number(formData.get("term")),
+    teacherRemark: String(formData.get("teacherRemark") || "").slice(0, 1000),
+    principalRemark: String(formData.get("principalRemark") || "").slice(0, 1000),
+  });
+  if (!parsed.success) return;
+  const { studentId, session: yr, term, teacherRemark, principalRemark } = parsed.data;
+
+  const student = await prisma.studentProfile.findUnique({
+    where: { id: studentId },
+    select: { id: true, classroomId: true },
+  });
+  if (!student || !student.classroomId) return;
+
+  await prisma.resultSheet.upsert({
+    where: { studentId_session_term: { studentId, session: yr, term } },
+    update: { teacherRemark, principalRemark },
+    create: {
+      studentId,
+      session: yr,
+      term,
+      classroomId: student.classroomId,
+      teacherRemark,
+      principalRemark,
+    },
+  });
+  await audit("result.remarks", {
+    entity: "ResultSheet",
+    entityId: studentId,
+    detail: `${yr} T${term}`,
+    session,
+  });
+  revalidatePath(`/admin/reports/${studentId}`);
+}
+
+const publishSchema = z.object({
+  studentId: z.string().min(1),
+  session: z.string().min(4).max(20),
+  term: z.number().int().min(1).max(3),
+  publish: z.enum(["0", "1"]),
+});
+
+/** Publish (or withdraw) one pupil's result so the portal can show it. */
+export async function setResultPublished(formData: FormData) {
+  const session = await assertStaff();
+  const parsed = publishSchema.safeParse({
+    studentId: formData.get("studentId"),
+    session: formData.get("session"),
+    term: Number(formData.get("term")),
+    publish: String(formData.get("publish") || "0"),
+  });
+  if (!parsed.success) return;
+  const { studentId, session: yr, term } = parsed.data;
+  const publish = parsed.data.publish === "1";
+
+  const student = await prisma.studentProfile.findUnique({
+    where: { id: studentId },
+    select: { classroomId: true },
+  });
+  if (!student?.classroomId) return;
+
+  await prisma.resultSheet.upsert({
+    where: { studentId_session_term: { studentId, session: yr, term } },
+    update: {
+      published: publish,
+      publishedAt: publish ? new Date() : null,
+      publishedBy: publish ? session.id : null,
+    },
+    create: {
+      studentId,
+      session: yr,
+      term,
+      classroomId: student.classroomId,
+      published: publish,
+      publishedAt: publish ? new Date() : null,
+      publishedBy: publish ? session.id : null,
+    },
+  });
+  await audit(publish ? "result.publish" : "result.unpublish", {
+    entity: "ResultSheet",
+    entityId: studentId,
+    detail: `${yr} T${term}`,
+    session,
+  });
+  revalidatePath(`/admin/reports/${studentId}`);
+  revalidatePath("/admin/reports");
+  revalidatePath("/portal");
+}

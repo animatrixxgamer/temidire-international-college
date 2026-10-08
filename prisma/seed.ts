@@ -173,8 +173,153 @@ async function main() {
     create: { key: "current_term", value: "1" },
   });
 
+  // ——— Demo pupils (JSS 1 A) so scores, report cards and the portal have data ———
+  const jss1 = await prisma.classroom.findFirst({ where: { name: "JSS 1 A" } });
+  const demoSession = "2026/2027";
+  const demoTerm = 1;
+  let publishedPupilId: string | null = null;
+
+  if (jss1) {
+    // Local WAEC scale so the seed does not depend on app path aliases.
+    const bands: Array<[number, string]> = [
+      [75, "A1"], [70, "B2"], [65, "B3"], [60, "C4"], [55, "C5"],
+      [50, "C6"], [45, "D7"], [40, "E8"], [0, "F9"],
+    ];
+    const gradeOf = (total: number) => (bands.find(([min]) => total >= min) ?? bands[8])[1];
+
+    const pupils = [
+      { name: "Adaeze Nwosu", admissionNo: "TMD/2026/0001", base: 74 },
+      { name: "Emeka Obi", admissionNo: "TMD/2026/0002", base: 68 },
+      { name: "Fatima Bello", admissionNo: "TMD/2026/0003", base: 81 },
+      { name: "Tunde Adeyemi", admissionNo: "TMD/2026/0004", base: 59 },
+      { name: "Ngozi Eze", admissionNo: "TMD/2026/0005", base: 72 },
+      { name: "Samuel Ojo", admissionNo: "TMD/2026/0006", base: 46 },
+    ];
+    const subjects = await prisma.subject.findMany({
+      where: { code: { in: ["MTH", "ENG", "PHY", "CHM", "BIO"] } },
+      orderBy: { code: "asc" },
+    });
+
+    let pupilNo = 0;
+    for (const p of pupils) {
+      const studentEmail =
+        p.name.toLowerCase().replace(/[^a-z]+/g, ".") + "@student.temidirecollege.ng";
+      const user = await prisma.user.upsert({
+        where: { email: studentEmail },
+        update: { name: p.name, role: "STUDENT", active: true },
+        create: { email: studentEmail, passwordHash: hash, name: p.name, role: "STUDENT" },
+      });
+      const profile = await prisma.studentProfile.upsert({
+        where: { admissionNo: p.admissionNo },
+        update: { userId: user.id, classroomId: jss1.id },
+        create: { userId: user.id, admissionNo: p.admissionNo, classroomId: jss1.id },
+      });
+
+      for (let i = 0; i < subjects.length; i++) {
+        const subject = subjects[i];
+        const total = Math.max(20, Math.min(98, p.base + ((i * 7) % 15) - 5));
+        const ca = Math.round(total * 0.4 * 10) / 10;
+        const exam = Math.round((total - ca) * 10) / 10;
+        await prisma.score.upsert({
+          where: {
+            studentId_subjectId_session_term: {
+              studentId: profile.id,
+              subjectId: subject.id,
+              session: demoSession,
+              term: demoTerm,
+            },
+          },
+          update: { ca, exam, total, grade: gradeOf(total), classroomId: jss1.id, enteredBy: "seed" },
+          create: {
+            studentId: profile.id,
+            subjectId: subject.id,
+            classroomId: jss1.id,
+            session: demoSession,
+            term: demoTerm,
+            ca,
+            exam,
+            total,
+            grade: gradeOf(total),
+            enteredBy: "seed",
+          },
+        });
+      }
+
+      // A short attendance history, mostly present.
+      for (let d = 1; d <= 4; d++) {
+        const day = new Date(Date.UTC(2026, 9, 12 - d, 9, 0, 0));
+        const status =
+          (pupilNo + d) % 7 === 0 ? "ABSENT" : (pupilNo + d) % 5 === 0 ? "LATE" : "PRESENT";
+        await prisma.attendanceRecord.upsert({
+          where: { studentId_date: { studentId: profile.id, date: day } },
+          update: { status, markedBy: "seed" },
+          create: { studentId: profile.id, date: day, status, markedBy: "seed" },
+        });
+      }
+
+      if (!publishedPupilId) publishedPupilId = profile.id;
+      pupilNo++;
+    }
+
+    // One parent login, linked to the first pupil.
+    const parentEmail = "parent@temidirecollege.ng";
+    const parentUser = await prisma.user.upsert({
+      where: { email: parentEmail },
+      update: { role: "PARENT", active: true },
+      create: {
+        email: parentEmail,
+        passwordHash: hash,
+        name: "Mrs. Chioma Nwosu",
+        role: "PARENT",
+      },
+    });
+    const parentProfile = await prisma.parentProfile.upsert({
+      where: { userId: parentUser.id },
+      update: {},
+      create: { userId: parentUser.id, phone: "+234 803 555 0199" },
+    });
+
+    if (publishedPupilId) {
+      await prisma.studentParent.upsert({
+        where: {
+          studentId_parentId: { studentId: publishedPupilId, parentId: parentProfile.id },
+        },
+        update: { isPrimary: true },
+        create: {
+          studentId: publishedPupilId,
+          parentId: parentProfile.id,
+          relationship: "mother",
+          isPrimary: true,
+        },
+      });
+
+      // Publish one pupil's result so the portal shows a real report card.
+      await prisma.resultSheet.upsert({
+        where: {
+          studentId_session_term: {
+            studentId: publishedPupilId,
+            session: demoSession,
+            term: demoTerm,
+          },
+        },
+        update: { published: true, publishedAt: new Date() },
+        create: {
+          studentId: publishedPupilId,
+          classroomId: jss1.id,
+          session: demoSession,
+          term: demoTerm,
+          published: true,
+          publishedAt: new Date(),
+          teacherRemark: "A strong, steady term — keep reading widely.",
+          principalRemark: "Well done. We look forward to an even better Term 2.",
+        },
+      });
+    }
+  }
+
   console.log("✅ Seed complete. Super admin:", email);
   console.log("   Demo logins use the same password as SUPER_ADMIN_PASSWORD.");
+  console.log("   Demo pupil: adaeze.nwosu@student.temidirecollege.ng · parent: parent@temidirecollege.ng");
 }
 
 main()
