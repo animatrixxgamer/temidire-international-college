@@ -148,4 +148,4 @@ Full walkthrough with custom-domain notes: `docs/DEPLOYMENT.md`.
 ---
 **Live repo:** https://github.com/animatrixxgamer/temidire-international-college
 
-Built with Buffy 🤖 · All placeholder people/figures are fictional and must be replaced before public launch.
+Built by 𝕬𝖓𝖎𝖒𝖆𝖙𝖗𝖎𝖝𝖝 𝕲𝖆𝖒𝖊𝖗 ✪ · All placeholder people/figures are fictional and must be replaced before public launch.
