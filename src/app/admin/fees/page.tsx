@@ -20,7 +20,7 @@ export default async function AdminFeesPage() {
   const session = await requireStaff();
   const canRecord = FINANCE_ROLES.includes(session.role);
 
-  const [sessionRow, termRow, students, invoices] = await Promise.all([
+  const [sessionRow, termRow, students, invoices, totals] = await Promise.all([
     prisma.settings.findUnique({ where: { key: "current_session" } }),
     prisma.settings.findUnique({ where: { key: "current_term" } }),
     prisma.studentProfile.findMany({
@@ -38,13 +38,18 @@ export default async function AdminFeesPage() {
       orderBy: { createdAt: "desc" },
       take: 80,
     }),
+    // Totals cover every invoice, not just the 80 listed below.
+    prisma.feeInvoice.aggregate({
+      _sum: { amount: true, paidAmount: true },
+      _count: true,
+    }),
   ]);
 
   const yr = sessionRow?.value ?? "2026/2027";
   const term = Number(termRow?.value ?? "1") || 1;
 
-  const billed = invoices.reduce((sum, i) => sum + i.amount, 0);
-  const collected = invoices.reduce((sum, i) => sum + i.paidAmount, 0);
+  const billed = totals._sum.amount ?? 0;
+  const collected = totals._sum.paidAmount ?? 0;
 
   return (
     <div className="space-y-6">
@@ -61,7 +66,7 @@ export default async function AdminFeesPage() {
           { label: "Billed", value: naira(billed) },
           { label: "Collected", value: naira(collected) },
           { label: "Outstanding", value: naira(Math.max(0, billed - collected)) },
-          { label: "Invoices", value: String(invoices.length) },
+          { label: "Invoices", value: String(totals._count) },
         ].map((c) => (
           <div key={c.label} className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 p-5">
             <p className="font-serif text-2xl text-gold-500 tabular">{c.value}</p>

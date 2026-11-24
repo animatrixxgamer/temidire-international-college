@@ -101,7 +101,7 @@ export default async function AdminStaffPage() {
                   />
                 </label>
                 <label className="text-sm text-ivory-100/70">
-                  Phone
+                  Phone (internal only)
                   <input
                     name="phone"
                     defaultValue={s.phone ?? ""}
@@ -110,7 +110,7 @@ export default async function AdminStaffPage() {
                   />
                 </label>
                 <label className="text-sm text-ivory-100/70 md:col-span-2">
-                  Short bio
+                  Short bio (shown publicly)
                   <textarea
                     name="bio"
                     rows={3}
@@ -118,6 +118,10 @@ export default async function AdminStaffPage() {
                     placeholder="One or two sentences for the staff directory."
                     className="mt-1 block w-full rounded-md border border-ivory-100/20 bg-navy-950 px-3 py-2 text-sm"
                   />
+                  <span className="mt-1 block text-xs text-ivory-100/40">
+                    Appears on /about/leadership. Keep it to role and teaching background —
+                    phone numbers and personal details are not published.
+                  </span>
                 </label>
                 <button className="rounded-full bg-gold-500 px-5 py-2 text-sm font-semibold text-navy-950 md:col-span-2 md:justify-self-start">
                   Save details

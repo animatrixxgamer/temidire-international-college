@@ -841,6 +841,9 @@ export async function recordPayment(formData: FormData) {
   const { invoiceId, amount, method, reference } = parsed.data;
   const invoice = await prisma.feeInvoice.findUnique({ where: { id: invoiceId } });
   if (!invoice) return;
+  const remaining = Math.max(0, invoice.amount - invoice.paidAmount);
+  // The form caps this client-side; reject overpayments here too.
+  if (remaining === 0 || amount > remaining) return;
   const paid = invoice.paidAmount + amount;
   const status = paid >= invoice.amount ? "PAID" : paid > 0 ? "PART" : "PENDING";
   await prisma.$transaction([
