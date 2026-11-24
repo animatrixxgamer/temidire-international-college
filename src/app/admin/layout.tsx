@@ -24,9 +24,10 @@ const NAV = [
   ["/admin/users", "Users"],
   ["/admin/settings", "Settings"],
   ["/admin/audit", "Audit log"],
+  ["/admin/backup", "Backups"],
 ];
 
-const STAFF_ONLY = ["/admin/users", "/admin/settings"];
+const STAFF_ONLY = ["/admin/users", "/admin/settings", "/admin/backup"];
 /** Preview tools — hidden from roles that never touch registers or marks. */
 const TEACHING_ONLY = ["/admin/attendance", "/admin/scores", "/admin/reports", "/admin/timetable"];
 

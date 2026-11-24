@@ -277,6 +277,7 @@ model Payment {
   method      String     @default("MANUAL") // MANUAL | PAYSTACK
   reference   String?    // Paystack reference
   status      String     @default("SUCCESS") // SUCCESS | PENDING | FAILED
+  checkoutUrl String?    // Paystack hosted checkout, reused while a payment is pending
   channel     String?    // card | bank | ussd
   paidAt      DateTime   @default(now())
   recordedBy  String?

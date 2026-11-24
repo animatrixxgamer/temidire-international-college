@@ -74,4 +74,4 @@ npm run db:seed
 
 - **"Error 500" on pages that read the DB** → the seed hasn't run on the production DB (repeat step 4's seed commands).
 - **Login says "Wrong email or password"** → run the seed, or reset the password in Admin → Users.
-- **Images broken** → files go in `public/images/` with the exact names from `docs/PLACEHOLDER-IMAGES.md`.
+- **Images broken** → files go in `public/images/` using the filenames the pages reference; the list in `docs/REAL-CONTENT-CHECKLIST.md` covers the photos still to be supplied.

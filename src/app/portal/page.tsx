@@ -3,11 +3,14 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/components/admin/LogoutButton";
 import { TodayTimetable } from "@/components/portal/TodayTimetable";
 import { FeeProgressBar, type FeeStatus } from "@/components/portal/FeeProgressBar";
+import { PayFees } from "@/components/portal/PayFees";
+import { PaymentNotice } from "@/components/portal/PaymentNotice";
 import { Reveal, SplitHeading } from "@/components/motion/primitives";
 import { TransitionLink } from "@/components/motion/PageTransition";
 import { getSession } from "@/lib/auth-server";
 import { isStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { paystackEnabled } from "@/lib/paystack";
 import { buildClassReport, ordinal } from "@/lib/report";
 import { buildWeek } from "@/lib/timetable";
 import { portalTimetable, portalFees, school } from "@/content/siteContent";
@@ -26,7 +29,12 @@ const LINKS = [
  * Landing route for STUDENT / PARENT sessions — middleware and the login API
  * both redirect here, so this page must always exist.
  */
-export default async function PortalPage() {
+export default async function PortalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ payment?: string }>;
+}) {
+  const { payment } = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login?next=/portal");
   if (isStaff(session.role)) redirect("/admin");
@@ -205,6 +213,14 @@ export default async function PortalPage() {
     }),
   ]);
 
+  const payable = invoices
+    .filter((i) => i.amount - i.paidAmount > 0)
+    .map((i) => ({
+      id: i.id,
+      label: i.kind.charAt(0) + i.kind.slice(1).toLowerCase(),
+      balance: i.amount - i.paidAmount,
+    }));
+
   const feesTotal = invoices.reduce((sum, i) => sum + i.amount, 0);
   const feesPaid = invoices.reduce((sum, i) => sum + i.paidAmount, 0);
   const feeData: { paid: number; total: number; status: FeeStatus; label: string } = invoices.length
@@ -232,6 +248,8 @@ export default async function PortalPage() {
             matter, all in one place. Office hours: {school.hours}.
           </p>
         </Reveal>
+
+        {payment && <PaymentNotice key={payment} reference={payment} />}
 
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
           <Reveal delay={0.05}>
@@ -297,6 +315,7 @@ export default async function PortalPage() {
                 ? "Payments are made at the bursary or by bank transfer. This balance comes from the school's invoice record and updates as payments are recorded."
                 : "Payments are made at the bursary or by bank transfer. No invoice has been raised for this term yet — the figures above are a preview."}
             </p>
+            <PayFees invoices={payable} enabled={paystackEnabled()} className="mt-4" />
           </Reveal>
         </div>
 

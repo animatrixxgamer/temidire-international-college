@@ -8,7 +8,8 @@ export async function audit(
   opts: { entity?: string; entityId?: string; detail?: string; session?: SessionUser | null } = {}
 ) {
   try {
-    const session = opts.session ?? (await getSession());
+    // `session: null` means a system event (e.g. a webhook) with no signed-in user.
+    const session = opts.session !== undefined ? opts.session : await getSession();
     await prisma.auditLog.create({
       data: {
         action,

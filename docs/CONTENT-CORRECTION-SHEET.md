@@ -72,7 +72,7 @@ For each route, confirm the **exact stops in order**, the **morning pickup time*
 
 ## D. People (`principal`, `leadership[]`, `staff[]`, `classTeachers[]` in Phase 2)
 
-Replace all AI placeholder names with real, consented people.
+Replace all placeholder names with real, consented people.
 
 ### Principal (`principal`)
 - Name: Mrs. Olufunmilayo Akinwale
