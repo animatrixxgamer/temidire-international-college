@@ -59,3 +59,9 @@ export const STAFF_ROLES = [
 ];
 
 export const isStaff = (role: string) => STAFF_ROLES.includes(role);
+
+/** Roles allowed to edit the public staff directory. */
+export const STAFF_DIRECTORY_ROLES = ["SUPER_ADMIN", "ADMINISTRATOR", "PRINCIPAL", "VICE_PRINCIPAL"];
+
+/** Roles allowed to bill pupils and record payments. */
+export const FINANCE_ROLES = ["SUPER_ADMIN", "ADMINISTRATOR", "BURSAR"];

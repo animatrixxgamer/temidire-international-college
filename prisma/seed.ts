@@ -1,10 +1,28 @@
 /**
  * Seed: super admin + demo staff/classrooms/subjects/routes/content.
- * Safe to re-run (upserts by unique keys).
+ * Safe to re-run (upserts by unique keys). Reads .env itself.
  * Run: npm run db:seed
  */
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+
+/**
+ * Load DATABASE_URL (and the super-admin credentials) from the project's .env
+ * so `npm run db:seed` works on its own. Values already in the environment win.
+ */
+function loadEnv() {
+  const file = resolve(process.cwd(), ".env");
+  if (!existsSync(file)) return;
+  for (const line of readFileSync(file, "utf8").split("\n")) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (!match || process.env[match[1]] !== undefined) continue;
+    process.env[match[1]] = match[2].replace(/^["']|["']$/g, "");
+  }
+}
+
+loadEnv();
 
 const prisma = new PrismaClient();
 

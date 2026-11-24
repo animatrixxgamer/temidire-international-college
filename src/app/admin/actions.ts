@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { assertStaff, assertSuperAdmin } from "@/lib/guards";
+import { FINANCE_ROLES, STAFF_DIRECTORY_ROLES } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { gradeFor } from "@/lib/grading";
 import { parseDay } from "@/lib/dates";
@@ -538,4 +539,329 @@ export async function saveTimetable(input: {
   revalidatePath("/admin/timetable");
   revalidatePath("/portal");
   return { ok: true, saved: keep.length };
+}
+
+/* ————— Announcements ————— */
+
+const announcementSchema = z.object({
+  title: z.string().min(3).max(200),
+  body: z.string().min(3).max(5000),
+  audience: z.enum(["ALL", "STUDENTS", "PARENTS", "STAFF"]),
+});
+
+export async function createAnnouncement(formData: FormData) {
+  const session = await assertStaff();
+  const parsed = announcementSchema.safeParse({
+    title: formData.get("title"),
+    body: formData.get("body"),
+    audience: formData.get("audience"),
+  });
+  if (!parsed.success) return;
+  const row = await prisma.announcement.create({ data: parsed.data });
+  await audit("announcement.create", {
+    entity: "Announcement",
+    entityId: row.id,
+    detail: `${parsed.data.audience}: ${parsed.data.title}`,
+    session,
+  });
+  revalidatePath("/admin/announcements");
+  revalidatePath("/portal");
+}
+
+export async function deleteAnnouncement(formData: FormData) {
+  const session = await assertStaff();
+  const id = String(formData.get("id") || "");
+  const row = await prisma.announcement.findUnique({ where: { id } });
+  if (!row) return;
+  await prisma.announcement.delete({ where: { id } });
+  await audit("announcement.delete", {
+    entity: "Announcement",
+    entityId: id,
+    detail: row.title,
+    session,
+  });
+  revalidatePath("/admin/announcements");
+  revalidatePath("/portal");
+}
+
+/* ————— Staff directory ————— */
+
+const staffSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(3).max(120),
+  title: z.string().max(20).optional(),
+  roleTitle: z.string().max(120).optional(),
+  phone: z.string().max(30).optional(),
+  bio: z.string().max(1500).optional(),
+});
+
+/** Edit the public-facing details of a staff member's profile. */
+export async function updateStaff(formData: FormData) {
+  const session = await assertStaff();
+  if (!STAFF_DIRECTORY_ROLES.includes(session.role)) throw new Error("Not authorised");
+  const parsed = staffSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    title: String(formData.get("title") || "") || undefined,
+    roleTitle: String(formData.get("roleTitle") || "") || undefined,
+    phone: String(formData.get("phone") || "") || undefined,
+    bio: String(formData.get("bio") || "") || undefined,
+  });
+  if (!parsed.success) return;
+  const { id, name, title, roleTitle, phone, bio } = parsed.data;
+  const profile = await prisma.staffProfile.findUnique({
+    where: { id },
+    select: { userId: true },
+  });
+  if (!profile) return;
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: profile.userId }, data: { name } }),
+    prisma.staffProfile.update({ where: { id }, data: { title, roleTitle, phone, bio } }),
+  ]);
+  await audit("staff.update", { entity: "StaffProfile", entityId: id, detail: name, session });
+  revalidatePath("/admin/staff");
+  revalidatePath("/about/leadership");
+}
+
+/* ————— Students ————— */
+
+const studentSchema = z.object({
+  name: z.string().min(3).max(120),
+  email: z.string().email(),
+  admissionNo: z.string().min(3).max(40),
+  classroomId: z.string().optional(),
+  password: z.string().min(8).max(100),
+});
+
+/** Enrol a pupil: creates the STUDENT login and its profile in one go. */
+export async function createStudent(formData: FormData) {
+  const session = await assertStaff();
+  const parsed = studentSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    admissionNo: formData.get("admissionNo"),
+    classroomId: String(formData.get("classroomId") || "") || undefined,
+    password: formData.get("password"),
+  });
+  if (!parsed.success) return;
+  const { name, email, admissionNo, classroomId, password } = parsed.data;
+  const [emailClash, numberClash] = await Promise.all([
+    prisma.user.findUnique({ where: { email: email.toLowerCase() } }),
+    prisma.studentProfile.findUnique({ where: { admissionNo } }),
+  ]);
+  if (emailClash || numberClash) return;
+  if (classroomId) {
+    const room = await prisma.classroom.findUnique({ where: { id: classroomId }, select: { id: true } });
+    if (!room) return;
+  }
+  const passwordHash = await bcrypt.hash(password, 12);
+  const user = await prisma.user.create({
+    data: { name, email: email.toLowerCase(), role: "STUDENT", passwordHash },
+  });
+  const profile = await prisma.studentProfile.create({
+    data: { userId: user.id, admissionNo, classroomId: classroomId ?? null },
+  });
+  await audit("student.create", {
+    entity: "StudentProfile",
+    entityId: profile.id,
+    detail: `${name} · ${admissionNo}`,
+    session,
+  });
+  revalidatePath("/admin/students");
+  revalidatePath("/admin");
+}
+
+export async function updateStudentClass(formData: FormData) {
+  const session = await assertStaff();
+  const id = String(formData.get("id") || "");
+  const classroomId = String(formData.get("classroomId") || "");
+  if (!id) return;
+  if (classroomId) {
+    const room = await prisma.classroom.findUnique({ where: { id: classroomId }, select: { id: true } });
+    if (!room) return;
+  }
+  const student = await prisma.studentProfile.findUnique({
+    where: { id },
+    select: { user: { select: { name: true } } },
+  });
+  if (!student) return;
+  await prisma.studentProfile.update({
+    where: { id },
+    data: { classroomId: classroomId || null },
+  });
+  await audit("student.class", {
+    entity: "StudentProfile",
+    entityId: id,
+    detail: `${student.user.name} moved class`,
+    session,
+  });
+  revalidatePath("/admin/students");
+  revalidatePath("/portal");
+}
+
+export async function toggleStudentActive(formData: FormData) {
+  const session = await assertStaff();
+  const id = String(formData.get("id") || "");
+  const student = await prisma.studentProfile.findUnique({ where: { id } });
+  if (!student) return;
+  await prisma.studentProfile.update({ where: { id }, data: { active: !student.active } });
+  await audit("student.toggleActive", {
+    entity: "StudentProfile",
+    entityId: id,
+    detail: student.admissionNo,
+    session,
+  });
+  revalidatePath("/admin/students");
+}
+
+/* ————— Assignments ————— */
+
+const assignmentSchema = z.object({
+  title: z.string().min(3).max(200),
+  description: z.string().min(3).max(8000),
+  classroomId: z.string().min(1),
+  subjectId: z.string().optional(),
+  dueDate: z.string().optional(),
+});
+
+export async function createAssignment(formData: FormData) {
+  const session = await assertStaff();
+  const parsed = assignmentSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description"),
+    classroomId: formData.get("classroomId"),
+    subjectId: String(formData.get("subjectId") || "") || undefined,
+    dueDate: String(formData.get("dueDate") || "") || undefined,
+  });
+  if (!parsed.success) return;
+  const { title, description, classroomId, subjectId, dueDate } = parsed.data;
+  const classroom = await prisma.classroom.findUnique({ where: { id: classroomId }, select: { id: true } });
+  if (!classroom) return;
+  if (subjectId) {
+    const subject = await prisma.subject.findUnique({ where: { id: subjectId }, select: { id: true } });
+    if (!subject) return;
+  }
+  const row = await prisma.assignment.create({
+    data: {
+      title,
+      description,
+      classroomId,
+      subjectId: subjectId ?? null,
+      postedBy: session.id,
+      dueDate: dueDate ? new Date(dueDate) : null,
+    },
+  });
+  await audit("assignment.create", {
+    entity: "Assignment",
+    entityId: row.id,
+    detail: title,
+    session,
+  });
+  revalidatePath("/admin/assignments");
+  revalidatePath("/portal");
+}
+
+export async function deleteAssignment(formData: FormData) {
+  const session = await assertStaff();
+  const id = String(formData.get("id") || "");
+  const row = await prisma.assignment.findUnique({ where: { id } });
+  if (!row) return;
+  // Submissions reference the assignment, so clear them first.
+  await prisma.$transaction([
+    prisma.submission.deleteMany({ where: { assignmentId: id } }),
+    prisma.assignment.delete({ where: { id } }),
+  ]);
+  await audit("assignment.delete", { entity: "Assignment", entityId: id, detail: row.title, session });
+  revalidatePath("/admin/assignments");
+  revalidatePath("/portal");
+}
+
+/* ————— Fees ————— */
+
+const invoiceSchema = z.object({
+  studentId: z.string().min(1),
+  kind: z.enum(["TUITION", "LEVIES", "TRANSPORT"]),
+  amount: z.coerce.number().min(1).max(10_000_000),
+});
+
+/** Bill one pupil for the current session/term. Duplicate bills are ignored. */
+export async function createInvoice(formData: FormData) {
+  const session = await assertStaff();
+  if (!FINANCE_ROLES.includes(session.role)) throw new Error("Not authorised");
+  const parsed = invoiceSchema.safeParse({
+    studentId: formData.get("studentId"),
+    kind: formData.get("kind"),
+    amount: formData.get("amount"),
+  });
+  if (!parsed.success) return;
+  const { studentId, kind, amount } = parsed.data;
+  const [student, sessionRow, termRow] = await Promise.all([
+    prisma.studentProfile.findUnique({ where: { id: studentId }, select: { id: true } }),
+    prisma.settings.findUnique({ where: { key: "current_session" } }),
+    prisma.settings.findUnique({ where: { key: "current_term" } }),
+  ]);
+  if (!student) return;
+  const yr = sessionRow?.value ?? "2026/2027";
+  const term = Number(termRow?.value ?? "1") || 1;
+  const existing = await prisma.feeInvoice.findUnique({
+    where: { studentId_session_term_kind: { studentId, session: yr, term, kind } },
+  });
+  if (existing) return;
+  const invoice = await prisma.feeInvoice.create({
+    data: { studentId, session: yr, term, kind, amount },
+  });
+  await audit("invoice.create", {
+    entity: "FeeInvoice",
+    entityId: invoice.id,
+    detail: `${kind} ₦${amount} · ${yr} T${term}`,
+    session,
+  });
+  revalidatePath("/admin/fees");
+  revalidatePath("/portal");
+}
+
+const paymentSchema = z.object({
+  invoiceId: z.string().min(1),
+  amount: z.coerce.number().min(1).max(10_000_000),
+  method: z.enum(["MANUAL", "PAYSTACK"]),
+  reference: z.string().max(120).optional(),
+});
+
+/** Record money received against an invoice and keep its status in step. */
+export async function recordPayment(formData: FormData) {
+  const session = await assertStaff();
+  if (!FINANCE_ROLES.includes(session.role)) throw new Error("Not authorised");
+  const parsed = paymentSchema.safeParse({
+    invoiceId: formData.get("invoiceId"),
+    amount: formData.get("amount"),
+    method: formData.get("method"),
+    reference: String(formData.get("reference") || "") || undefined,
+  });
+  if (!parsed.success) return;
+  const { invoiceId, amount, method, reference } = parsed.data;
+  const invoice = await prisma.feeInvoice.findUnique({ where: { id: invoiceId } });
+  if (!invoice) return;
+  const paid = invoice.paidAmount + amount;
+  const status = paid >= invoice.amount ? "PAID" : paid > 0 ? "PART" : "PENDING";
+  await prisma.$transaction([
+    prisma.payment.create({
+      data: {
+        invoiceId,
+        amount,
+        method,
+        reference: reference ?? null,
+        status: "SUCCESS",
+        recordedBy: session.id,
+      },
+    }),
+    prisma.feeInvoice.update({ where: { id: invoiceId }, data: { paidAmount: paid, status } }),
+  ]);
+  await audit("payment.record", {
+    entity: "FeeInvoice",
+    entityId: invoiceId,
+    detail: `₦${amount} · ${method} · ${status}`,
+    session,
+  });
+  revalidatePath("/admin/fees");
+  revalidatePath("/portal");
 }

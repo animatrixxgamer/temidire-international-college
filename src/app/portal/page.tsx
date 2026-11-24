@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/components/admin/LogoutButton";
 import { TodayTimetable } from "@/components/portal/TodayTimetable";
-import { FeeProgressBar } from "@/components/portal/FeeProgressBar";
+import { FeeProgressBar, type FeeStatus } from "@/components/portal/FeeProgressBar";
 import { Reveal, SplitHeading } from "@/components/motion/primitives";
 import { TransitionLink } from "@/components/motion/PageTransition";
 import { getSession } from "@/lib/auth-server";
@@ -145,6 +145,39 @@ export default async function PortalPage() {
   );
   const hasTimetable = Object.keys(week).length > 0;
 
+  // Notices addressed to this role, homework for this pupil's class, and their bills.
+  const audience = session.role === "PARENT" ? "PARENTS" : "STUDENTS";
+  const [announcements, assignments, invoices] = await Promise.all([
+    prisma.announcement.findMany({
+      where: { audience: { in: ["ALL", audience] } },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+    }),
+    prisma.assignment.findMany({
+      where: { classroomId: profile?.classroomId ?? "__none__" },
+      include: {
+        subject: { select: { name: true } },
+        classroom: { select: { name: true } },
+      },
+      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+      take: 5,
+    }),
+    prisma.feeInvoice.findMany({
+      where: { studentId: studentId ?? "__none__", session: currentSession, term: currentTerm },
+    }),
+  ]);
+
+  const feesTotal = invoices.reduce((sum, i) => sum + i.amount, 0);
+  const feesPaid = invoices.reduce((sum, i) => sum + i.paidAmount, 0);
+  const feeData: { paid: number; total: number; status: FeeStatus; label: string } = invoices.length
+    ? {
+        paid: feesPaid,
+        total: feesTotal,
+        status: feesPaid >= feesTotal ? "PAID" : feesPaid > 0 ? "PARTIAL" : "UNPAID",
+        label: `${currentSession} · Term ${currentTerm}`,
+      }
+    : { paid: portalFees.paid, total: portalFees.total, status: portalFees.status, label: portalFees.level };
+
   return (
     <main className="pt-16">
       <section className="mx-auto max-w-6xl px-6 pb-24 pt-20">
@@ -214,18 +247,70 @@ export default async function PortalPage() {
           </Reveal>
 
           <Reveal delay={0.1}>
-            <h2 className="font-serif text-2xl">School fees · {portalFees.level}</h2>
+            <h2 className="font-serif text-2xl">School fees · {feeData.label}</h2>
             <FeeProgressBar
-              paid={portalFees.paid}
-              total={portalFees.total}
-              status={portalFees.status}
+              paid={feeData.paid}
+              total={feeData.total}
+              status={feeData.status}
               className="mt-4"
             />
             <p className="mt-4 rounded-[12px] border border-ivory-100/10 bg-navy-800/60 p-4 text-sm text-ivory-100/70">
-              Payments are made at the bursary or by bank transfer. The live fee
-              table and online payment arrive with Phase 3 — the figures above are
-              the current preview.
+              {invoices.length
+                ? "Payments are made at the bursary or by bank transfer. This balance comes from the school's invoice record and updates as payments are recorded."
+                : "Payments are made at the bursary or by bank transfer. No invoice has been raised for this term yet — the figures above are a preview."}
             </p>
+          </Reveal>
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <Reveal delay={0.05}>
+            <h2 className="font-serif text-2xl">Notices</h2>
+            <ul className="mt-4 space-y-3">
+              {announcements.map((a) => (
+                <li key={a.id} className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 p-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-semibold">{a.title}</p>
+                    <span className="text-xs text-ivory-100/40">
+                      {new Date(a.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-ivory-100/70">{a.body}</p>
+                </li>
+              ))}
+              {announcements.length === 0 && (
+                <li className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 p-5 text-sm text-ivory-100/60">
+                  No notices right now. Term news lands here as the office posts it.
+                </li>
+              )}
+            </ul>
+          </Reveal>
+
+          <Reveal delay={0.08}>
+            <h2 className="font-serif text-2xl">Homework</h2>
+            <ul className="mt-4 space-y-3">
+              {assignments.map((a) => (
+                <li key={a.id} className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 p-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-semibold">{a.title}</p>
+                    <span className="rounded-full bg-gold-500/10 px-3 py-0.5 text-xs text-gold-300">
+                      {a.dueDate
+                        ? `Due ${new Date(a.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}`
+                        : "No due date"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-ivory-100/70">{a.description}</p>
+                  <p className="mt-2 text-xs text-ivory-100/40">
+                    {a.classroom.name}
+                    {a.subject ? ` · ${a.subject.name}` : " · General"}
+                  </p>
+                </li>
+              ))}
+              {assignments.length === 0 && (
+                <li className="rounded-2xl border border-ivory-100/10 bg-navy-800/60 p-5 text-sm text-ivory-100/60">
+                  No homework set for this class. Check back after the next lesson.
+                </li>
+              )}
+            </ul>
           </Reveal>
         </div>
 
