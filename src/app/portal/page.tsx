@@ -39,18 +39,56 @@ export default async function PortalPage() {
   const first = firstName || "there";
   const roleLabel = session.role === "PARENT" ? "Parent" : "Student";
 
-  // Resolve the pupil behind this login (a student directly, or a parent's first child).
+  // Resolve the pupil behind this login (a student directly, or a parent's first
+  // child who is still on roll). Pupils taken off the active roll keep no access.
   const ownProfile = await prisma.studentProfile.findUnique({
     where: { userId: session.id },
-    select: { id: true },
+    select: { id: true, active: true },
   });
-  let studentId: string | null = ownProfile?.id ?? null;
-  if (!studentId) {
+  let studentId: string | null = ownProfile?.active ? ownProfile.id : null;
+  let parentProfile = false;
+  if (!ownProfile) {
     const parent = await prisma.parentProfile.findUnique({
       where: { userId: session.id },
-      select: { children: { select: { studentId: true }, take: 1 } },
+      select: {
+        children: {
+          select: { studentId: true, student: { select: { active: true } } },
+        },
+      },
     });
-    studentId = parent?.children[0]?.studentId ?? null;
+    parentProfile = Boolean(parent);
+    studentId = parent?.children.find((c) => c.student.active)?.studentId ?? null;
+  }
+  const accessPaused = (ownProfile !== null && !ownProfile.active) || (parentProfile && !studentId);
+
+  if (accessPaused) {
+    return (
+      <main className="pt-16">
+        <section className="mx-auto max-w-2xl px-6 pb-24 pt-20">
+          <Reveal>
+            <p className="text-sm tracking-wide text-gold-500">{roleLabel} portal</p>
+            <SplitHeading
+              text="Portal access is paused"
+              className="mt-3 font-serif text-3xl md:text-4xl"
+            />
+            <p className="mt-6 text-ivory-100/70">
+              This pupil is not on the active roll, so results, fees, timetable and
+              homework are hidden. Contact the school office if this looks wrong —
+              they can return the pupil to the roll.
+            </p>
+          </Reveal>
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-ivory-100/10 bg-navy-800/60 p-5">
+            <div>
+              <p className="font-semibold">{session.name}</p>
+              <p className="text-xs text-ivory-100/50">{session.email}</p>
+            </div>
+            <div className="w-40">
+              <LogoutButton />
+            </div>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   const [sessionRow, termRow] = await Promise.all([
